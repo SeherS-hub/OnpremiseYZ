@@ -1,0 +1,7 @@
+EVALUATE
+SUMMARIZECOLUMNS (
+    Bolge[Bölge],
+    "Ciro", [Net Ciro],
+    "Gerçekleşme", [Hedef Gerçekleşme %]
+)
+ORDER BY [Ciro] DESC

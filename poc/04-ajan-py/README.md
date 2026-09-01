@@ -156,9 +156,33 @@ yaşanmış hatalardan çıktı:
 ## Araçlar
 
 ```powershell
-python araclar\sozluk_bosluk.py --gun 30
+python araclar\model_gozat.py                    # modeli incele
+python araclar\sozluk_bosluk.py --gun 30         # sözlük boşluğu raporu
 python araclar\sozlesme_iskelet.py --sunucu "SUNUCU\ORNEK" --model "Model"
 ```
+
+**`model_gozat`** — SSAS Tabular modelini konsoldan inceler. SSMS 21+
+Analysis Services Object Explorer desteğini kaldırdı; bu makinede SSMS 22'de
+AS bileşeni yok. Bu araç o boşluğu doldurur, hiçbir şey kurmadan.
+
+```powershell
+python araclar\model_gozat.py                    # tam özet
+python araclar\model_gozat.py --veritabanlari    # sunucudaki modeller
+python araclar\model_gozat.py --tablo Satis      # kolonlar, türler, gizlilik
+python araclar\model_gozat.py --olcu "Net Ciro"  # ölçünün DAX'ı
+python araclar\model_gozat.py --ara ciro         # ad ve DAX içinde arama
+python araclar\model_gozat.py --dax-dosya araclar\ornek.dax
+python araclar\model_gozat.py --satir-sayma-yok  # hızlı
+```
+
+Tam özet şunları verir: tablolar (satır sayısı, gizlilik), ölçüler (biçim,
+klasör), **ilişkiler süzme yönüyle birlikte**, roller + üyeler + satır
+filtreleri, bölüm durumu ve son işleme zamanı.
+
+Düzenleme ve işleme yok — o iş için Tabular Editor gerekir.
+
+> Karmaşık DAX'ı `--dax-dosya` ile verin. PowerShell argüman içindeki çift
+> tırnakları yutuyor; `"Ciro"` etiketi `Ciro` olup sözdizimi hatası veriyor.
 
 **`sozluk_bosluk`** — zenginleştirme döngüsünün motoru. Denetim kaydındaki
 gerçek soruları okur, sözleşmeye neyin eklenmesi gerektiğini sıralar:
@@ -206,7 +230,7 @@ lib/yorumlayici.py        sonuç → Türkçe cevap + künye
 lib/baglam_serisi.py      cevap kartının trend/hedef serileri
 lib/denetim_sql.py        denetim kaydı (pyodbc)
 
-araclar/                  sözleşme iskeleti · sözlük boşluğu
+araclar/                  model gözatıcı · sözleşme iskeleti · sözlük boşluğu
 public/index.html         arayüz
 test/                     altın küme · eşanlam · sınır
 ```
