@@ -1,0 +1,232 @@
+{
+  "createOrReplace": {
+    "object": { "database": "POC_SatisOzet" },
+    "database": {
+      "name": "POC_SatisOzet",
+      "compatibilityLevel": 1600,
+      "model": {
+        "culture": "tr-TR",
+        "sourceQueryCulture": "tr-TR",
+        "description": "POC · Satış özeti semantik modeli. 10 kayıt (yıl-ay). Yönetici asistanının sorguladığı onaylı metrik katmanı.",
+
+        "dataSources": [
+          {
+            "type": "provider",
+            "name": "SqlServer localhost POC_SatisYZ",
+            "description": "Şirket içi SQL Server · salt okunur. Servis hesabı db_datareader üyesidir (01-veri/02_ssas_servis_yetkisi.sql).",
+            "connectionString": "Provider=MSOLEDBSQL;Data Source=localhost;Initial Catalog=POC_SatisYZ;Integrated Security=SSPI;TrustServerCertificate=true",
+            "impersonationMode": "impersonateServiceAccount"
+          }
+        ],
+
+        "tables": [
+          {
+            "name": "SatisOzet",
+            "description": "Aylık satış özeti — tam 10 kayıt. Tabular modelin tek olgu tablosu.",
+            "columns": [
+              {
+                "name": "DonemKey",
+                "dataType": "int64",
+                "sourceColumn": "DonemKey",
+                "isHidden": true,
+                "summarizeBy": "none"
+              },
+              {
+                "name": "Yıl",
+                "dataType": "int64",
+                "sourceColumn": "Yil",
+                "summarizeBy": "none"
+              },
+              {
+                "name": "Ay No",
+                "dataType": "int64",
+                "sourceColumn": "Ay",
+                "isHidden": true,
+                "summarizeBy": "none"
+              },
+              {
+                "name": "Ay",
+                "dataType": "string",
+                "sourceColumn": "AyAd",
+                "summarizeBy": "none",
+                "sortByColumn": "Ay No"
+              },
+              {
+                "name": "Dönem",
+                "dataType": "string",
+                "sourceColumn": "DonemAd",
+                "summarizeBy": "none",
+                "sortByColumn": "DonemKey"
+              },
+              {
+                "name": "NetCiro",
+                "dataType": "decimal",
+                "sourceColumn": "NetCiro",
+                "isHidden": true,
+                "summarizeBy": "sum"
+              },
+              {
+                "name": "SatisAdet",
+                "dataType": "int64",
+                "sourceColumn": "SatisAdet",
+                "isHidden": true,
+                "summarizeBy": "sum"
+              },
+              {
+                "name": "HedefTutar",
+                "dataType": "decimal",
+                "sourceColumn": "Hedef",
+                "isHidden": true,
+                "summarizeBy": "sum"
+              },
+              {
+                "name": "MusteriSayisi",
+                "dataType": "int64",
+                "sourceColumn": "MusteriSayisi",
+                "isHidden": true,
+                "summarizeBy": "sum"
+              },
+              {
+                "type": "calculated",
+                "name": "Dönem Sıra",
+                "dataType": "int64",
+                "isHidden": true,
+                "summarizeBy": "none",
+                "expression": "RANKX ( ALL ( SatisOzet[DonemKey] ), SatisOzet[DonemKey], , ASC, DENSE )"
+              },
+              {
+                "type": "calculated",
+                "name": "Dönem Başlangıç",
+                "dataType": "dateTime",
+                "formatString": "dd.MM.yyyy",
+                "summarizeBy": "none",
+                "expression": "DATE ( SatisOzet[Yıl], SatisOzet[Ay No], 1 )"
+              }
+            ],
+
+            "measures": [
+              {
+                "name": "Net Ciro",
+                "description": "İade ve iskontolar düşülmüş, KDV hariç satış tutarı (TRY).",
+                "expression": "SUM ( SatisOzet[NetCiro] )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "01 Temel"
+              },
+              {
+                "name": "Satış Adet",
+                "description": "Satılan ürün adedi.",
+                "expression": "SUM ( SatisOzet[SatisAdet] )",
+                "formatString": "#,0",
+                "displayFolder": "01 Temel"
+              },
+              {
+                "name": "Müşteri Sayısı",
+                "description": "Dönem içinde alışveriş yapan tekil müşteri sayısı.",
+                "expression": "SUM ( SatisOzet[MusteriSayisi] )",
+                "formatString": "#,0",
+                "displayFolder": "01 Temel"
+              },
+              {
+                "name": "Hedef",
+                "description": "Onaylı bütçe hedefi (TRY).",
+                "expression": "SUM ( SatisOzet[HedefTutar] )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "02 Hedef"
+              },
+              {
+                "name": "Hedef Gerçekleşme %",
+                "description": "Net Ciro / Hedef. 1,00 = hedef tam tutmuş.",
+                "expression": "DIVIDE ( [Net Ciro], [Hedef] )",
+                "formatString": "0.0%",
+                "displayFolder": "02 Hedef"
+              },
+              {
+                "name": "Hedef Sapma",
+                "description": "Net Ciro - Hedef (TRY). Negatif = hedefin altında.",
+                "expression": "[Net Ciro] - [Hedef]",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "02 Hedef"
+              },
+              {
+                "name": "Ortalama Sepet",
+                "description": "Net Ciro / Satış Adet (TRY).",
+                "expression": "DIVIDE ( [Net Ciro], [Satış Adet] )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "01 Temel"
+              },
+              {
+                "name": "Önceki Ay Ciro",
+                "description": "Bir önceki dönemin Net Cirosu (TRY).",
+                "expression": "VAR s = SELECTEDVALUE ( SatisOzet[Dönem Sıra] ) RETURN CALCULATE ( [Net Ciro], FILTER ( ALL ( SatisOzet ), SatisOzet[Dönem Sıra] = s - 1 ) )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "03 Karşılaştırma"
+              },
+              {
+                "name": "Aylık Değişim %",
+                "description": "(Net Ciro - Önceki Ay Ciro) / Önceki Ay Ciro.",
+                "expression": "DIVIDE ( [Net Ciro] - [Önceki Ay Ciro], [Önceki Ay Ciro] )",
+                "formatString": "+0.0%;-0.0%;0.0%",
+                "displayFolder": "03 Karşılaştırma"
+              },
+              {
+                "name": "Kümülatif Ciro",
+                "description": "Model kapsamındaki en eski dönemden itibaren birikimli Net Ciro (TRY).",
+                "expression": "VAR s = MAX ( SatisOzet[Dönem Sıra] ) RETURN CALCULATE ( [Net Ciro], FILTER ( ALL ( SatisOzet ), SatisOzet[Dönem Sıra] <= s ) )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "03 Karşılaştırma"
+              },
+              {
+                "name": "En Yüksek Ay Cirosu",
+                "description": "Seçili kapsamdaki en yüksek aylık Net Ciro (TRY).",
+                "expression": "MAXX ( VALUES ( SatisOzet[Dönem] ), [Net Ciro] )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "04 Uç değer"
+              },
+              {
+                "name": "En Yüksek Ay",
+                "description": "En yüksek Net Ciroya sahip dönemin adı.",
+                "expression": "VAR t = ADDCOLUMNS ( VALUES ( SatisOzet[Dönem] ), \"@c\", [Net Ciro] ) RETURN MAXX ( TOPN ( 1, t, [@c], DESC ), SatisOzet[Dönem] )",
+                "displayFolder": "04 Uç değer"
+              },
+              {
+                "name": "Ortalama Aylık Ciro",
+                "description": "Seçili dönemlerin aylık Net Ciro ortalaması (TRY).",
+                "expression": "AVERAGEX ( VALUES ( SatisOzet[Dönem] ), [Net Ciro] )",
+                "formatString": "#,0 \"TL\"",
+                "displayFolder": "04 Uç değer"
+              },
+              {
+                "name": "Hedefi Tutan Ay Sayısı",
+                "description": "Net Cironun Hedefe eşit veya üstünde olduğu dönem sayısı.",
+                "expression": "COUNTROWS ( FILTER ( VALUES ( SatisOzet[Dönem] ), [Net Ciro] >= [Hedef] ) )",
+                "formatString": "#,0",
+                "displayFolder": "02 Hedef"
+              }
+            ],
+
+            "partitions": [
+              {
+                "name": "SatisOzet",
+                "mode": "import",
+                "source": {
+                  "type": "query",
+                  "dataSource": "SqlServer localhost POC_SatisYZ",
+                  "query": "SELECT DonemKey, Yil, Ay, AyAd, DonemAd, NetCiro, SatisAdet, Hedef, MusteriSayisi FROM dbo.vw_SatisOzet"
+                }
+              }
+            ]
+          }
+        ],
+
+        "roles": [
+          {
+            "name": "Yonetici_Okuma",
+            "description": "Salt okunur yönetici rolü. Asistan bu rol üzerinden sorgular.",
+            "modelPermission": "read",
+            "members": []
+          }
+        ]
+      }
+    }
+  }
+}

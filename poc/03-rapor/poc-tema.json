@@ -1,0 +1,79 @@
+{
+  "name": "POC Yonetici Asistani",
+  "dataColors": [
+    "#1B5C77", "#A9541E", "#2C6B4C", "#5A7D8C",
+    "#93262B", "#7A8B54", "#6B4C7A", "#B08A2E"
+  ],
+  "background": "#FFFFFF",
+  "backgroundLight": "#EAF0F2",
+  "backgroundNeutral": "#DCE5E9",
+  "foreground": "#141A20",
+  "foregroundNeutralSecondary": "#48565D",
+  "foregroundNeutralTertiary": "#7D919B",
+  "tableAccent": "#1B5C77",
+  "good": "#2C6B4C",
+  "neutral": "#A9541E",
+  "bad": "#93262B",
+  "maximum": "#1B5C77",
+  "center": "#A9541E",
+  "minimum": "#93262B",
+  "textClasses": {
+    "title":    { "fontFace": "Segoe UI Semibold", "fontSize": 14, "color": "#141A20" },
+    "header":   { "fontFace": "Segoe UI Semibold", "fontSize": 11, "color": "#48565D" },
+    "label":    { "fontFace": "Segoe UI",          "fontSize": 10, "color": "#48565D" },
+    "callout":  { "fontFace": "Segoe UI Bold",     "fontSize": 32, "color": "#141A20" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background":  [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } } }],
+        "border":      [{ "show": true, "color": { "solid": { "color": "#DCE5E9" } }, "radius": 4 }],
+        "dropShadow":  [{ "show": false }],
+        "visualHeader":[{ "show": false }],
+        "title": [{
+          "show": true, "fontColor": { "solid": { "color": "#141A20" } },
+          "fontSize": 11, "fontFamily": "Segoe UI Semibold", "alignment": "left"
+        }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels":         [{ "color": { "solid": { "color": "#141A20" } }, "fontSize": 28, "fontFamily": "Segoe UI Bold" }],
+        "categoryLabels": [{ "color": { "solid": { "color": "#7D919B" } }, "fontSize": 9 }]
+      }
+    },
+    "lineClusteredColumnComboChart": {
+      "*": {
+        "categoryAxis": [{ "showAxisTitle": false, "gridlineShow": false, "fontSize": 9 }],
+        "valueAxis":    [{ "showAxisTitle": false, "gridlineColor": { "solid": { "color": "#EAF0F2" } }, "fontSize": 9 }],
+        "legend":       [{ "position": "TopCenter", "showTitle": false, "fontSize": 9 }]
+      }
+    },
+    "tableEx": {
+      "*": {
+        "grid":         [{ "gridVertical": false, "gridHorizontalColor": { "solid": { "color": "#EAF0F2" } }, "rowPadding": 3 }],
+        "columnHeaders":[{ "fontColor": { "solid": { "color": "#7D919B" } }, "backColor": { "solid": { "color": "#EAF0F2" } }, "fontSize": 9 }],
+        "values":       [{ "fontColorPrimary": { "solid": { "color": "#141A20" } }, "fontSize": 10 }]
+      }
+    },
+    "pivotTable": {
+      "*": {
+        "grid":         [{ "gridVertical": false, "gridHorizontalColor": { "solid": { "color": "#EAF0F2" } } }],
+        "columnHeaders":[{ "fontColor": { "solid": { "color": "#7D919B" } }, "backColor": { "solid": { "color": "#EAF0F2" } }, "fontSize": 9 }]
+      }
+    },
+    "slicer": {
+      "*": {
+        "header": [{ "show": false }],
+        "items":  [{ "fontColor": { "solid": { "color": "#48565D" } }, "fontSize": 10 }]
+      }
+    },
+    "actionButton": {
+      "*": {
+        "fill": [{ "show": true, "fillColor": { "solid": { "color": "#1B5C77" } }, "transparency": 0 }],
+        "text": [{ "fontColor": { "solid": { "color": "#FFFFFF" } }, "fontSize": 11, "fontFamily": "Segoe UI Semibold" }],
+        "border": [{ "show": false }]
+      }
+    }
+  }
+}

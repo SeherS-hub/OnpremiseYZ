@@ -1,0 +1,395 @@
+﻿[
+ [
+  "net ciro — farklı söyleyişler",
+  [
+   {
+    "s": "Mart ayı net ciromuz ne kadar?",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart cirosu",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayında ne kadar hasılat yaptık",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "martta gelirimiz neydi",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayı satış geliri",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayında ciromuzu söyler misin",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "marttaki net satışlarımız",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayı cirosunu öğrenebilir miyim",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   }
+  ]
+ ],
+ [
+  "yazım hatası / eksik harf",
+  [
+   {
+    "s": "mart ayı cirosu ne kadr",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayi ciromuz",
+    "b": {
+     "metrik": "net_ciro"
+    }
+   },
+   {
+    "s": "mart ayında hedf gerçekleşme",
+    "b": {
+     "metrik": "hedef_gerceklesme"
+    }
+   },
+   {
+    "s": "ortalama sept tutarı nedir",
+    "b": {
+     "metrik": "ortalama_sepet"
+    }
+   }
+  ]
+ ],
+ [
+  "kırılım — sözcük sırası serbest",
+  [
+   {
+    "s": "bölgeye göre ciro",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   },
+   {
+    "s": "ciro bölge bazında nasıl",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   },
+   {
+    "s": "bölge kırılımında ciro göster",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   },
+   {
+    "s": "bölgeler itibarıyla ciro",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   },
+   {
+    "s": "ciroyu bölgelere dağıt",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   },
+   {
+    "s": "kanal bazında satış adedi",
+    "b": {
+     "metrik": "satis_adet",
+     "boyut": "kanal"
+    }
+   },
+   {
+    "s": "kanallar bazında ortalama sepet",
+    "b": {
+     "metrik": "ortalama_sepet",
+     "boyut": "kanal"
+    }
+   },
+   {
+    "s": "ürün grubu kırılımı ile ciro",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "urun_grubu"
+    }
+   },
+   {
+    "s": "ürün gruplarına göre hedef gerçekleşme",
+    "b": {
+     "metrik": "hedef_gerceklesme",
+     "boyut": "urun_grubu"
+    }
+   }
+  ]
+ ],
+ [
+  "çıplak boyut adı KIRILIM DEĞİLDİR (filtre)",
+  [
+   {
+    "s": "Marmara bölgesinin cirosu ne kadar?",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": null
+    }
+   },
+   {
+    "s": "Ege bölgesinde kaç adet sattık",
+    "b": {
+     "metrik": "satis_adet",
+     "boyut": null
+    }
+   },
+   {
+    "s": "E-Ticaret kanalının cirosu",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": null
+    }
+   },
+   {
+    "s": "Mobilya ürün grubunun hedefi",
+    "b": {
+     "metrik": "hedef",
+     "boyut": null
+    }
+   }
+  ]
+ ],
+ [
+  "diğer ölçüler",
+  [
+   {
+    "s": "kaç adet ürün sattık",
+    "b": {
+     "metrik": "satis_adet"
+    }
+   },
+   {
+    "s": "kaç tane sattık",
+    "b": {
+     "metrik": "satis_adet"
+    }
+   },
+   {
+    "s": "kaç müşterimiz var",
+    "b": {
+     "metrik": "musteri_sayisi"
+    }
+   },
+   {
+    "s": "alıcı sayımız kaç kişi",
+    "b": {
+     "metrik": "musteri_sayisi"
+    }
+   },
+   {
+    "s": "bütçe hedefimiz neydi",
+    "b": {
+     "metrik": "hedef"
+    }
+   },
+   {
+    "s": "planlanan tutar ne kadardı",
+    "b": {
+     "metrik": "hedef"
+    }
+   },
+   {
+    "s": "hedefe ulaşabildik mi",
+    "b": {
+     "metrik": "hedef_gerceklesme"
+    }
+   },
+   {
+    "s": "bütçeyi tutturduk mu",
+    "b": {
+     "metrik": "hedef_gerceklesme"
+    }
+   },
+   {
+    "s": "ortalama fiş tutarı",
+    "b": {
+     "metrik": "ortalama_sepet"
+    }
+   },
+   {
+    "s": "sepet büyüklüğü ne",
+    "b": {
+     "metrik": "ortalama_sepet"
+    }
+   },
+   {
+    "s": "geçen aya kıyasla ne oldu",
+    "b": {
+     "metrik": "aylik_degisim"
+    }
+   },
+   {
+    "s": "aydan aya büyüme ne",
+    "b": {
+     "metrik": "aylik_degisim"
+    }
+   },
+   {
+    "s": "birikimli ciromuz",
+    "b": {
+     "metrik": "kumulatif_ciro"
+    }
+   },
+   {
+    "s": "hedeften ne kadar saptık",
+    "b": {
+     "metrik": "hedef_sapma"
+    }
+   },
+   {
+    "s": "hedefin ne kadar üstüne çıktık",
+    "b": {
+     "metrik": "hedef_sapma"
+    }
+   }
+  ]
+ ],
+ [
+  "top-N — rakam ve sayı adı",
+  [
+   {
+    "s": "en çok ciro yapan 3 bölge",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge",
+     "limit": 3
+    }
+   },
+   {
+    "s": "en çok ciro yapan üç bölge hangileri",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge",
+     "limit": 3
+    }
+   },
+   {
+    "s": "en yüksek cirolu iki kanal",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "kanal",
+     "limit": 2
+    }
+   },
+   {
+    "s": "2026 yılında en çok satan 3 ürün grubu",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "urun_grubu",
+     "limit": 3
+    }
+   },
+   {
+    "s": "en düşük ciroya sahip bölge",
+    "b": {
+     "metrik": "net_ciro",
+     "boyut": "bolge"
+    }
+   }
+  ]
+ ],
+ [
+  "OLUMSUZ · hâlâ reddedilmeli",
+  [
+   {
+    "s": "Rakiplerin pazar payı ne oldu?",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "Ahmet Yılmaz’ın maaşı ne kadar?",
+    "b": {
+     "durum": "yetkisiz"
+    }
+   },
+   {
+    "s": "personel bordrosu",
+    "b": {
+     "durum": "yetkisiz"
+    }
+   },
+   {
+    "s": "gelecek ay ciro ne olur",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "stok durumu nedir",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "merhaba",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "sen kimsin",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "bana bir şiir yaz",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "hava bugün nasıl",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "asdfgh qwerty",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "Kurumsal satışta müşteri sayısı",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   }
+  ]
+ ]
+]

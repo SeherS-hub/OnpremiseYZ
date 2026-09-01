@@ -1,0 +1,14 @@
+{
+  "version": "0.1",
+  "connections": [
+    {
+      "details": {
+        "protocol": "analysis-services",
+        "address": {
+          "server": "localhost\\TABULAR",
+          "database": "POC_Satis"
+        }
+      }
+    }
+  ]
+}

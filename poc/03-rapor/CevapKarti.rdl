@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  POC · Asistan Cevap Kartı  (v2 — üç grafik)
+    01 CEVAP        : sorunun kendi sonuç kümesi
+    02 TREND        : aynı metriğin 10 dönem boyunca seyri
+    03 HEDEFE GÖRE  : dönem bazında hedef gerçekleşmesi
+
+  TEK VERİ KAYNAĞI: denetim kaydı. Üç grafiğin de verisi ajan tarafından
+  cevapla birlikte yazılır; rapor iş verisine hiç bağlanmaz.
+
+  Serilerin sayıları SSAS Tabular'dan gelir — ajan onları cevabı üretirken
+  çeker. Bu, kartın cevabın verildiği ANDAKİ değerleri göstermesini sağlar:
+  model sonradan değişse bile denetim artefaktı geçmişi doğru anlatır.
+
+  NOT: Model 10 dönem içerir (2025-11 … 2026-08).
+-->
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Yönetici asistanı cevap kartı — cevap, trend, hedef karşılaştırması</Description>
+  <Author>Veri &amp; Yapay Zekâ Platformu</Author>
+  <AutoRefresh>0</AutoRefresh>
+
+  <DataSources>
+    <DataSource Name="dsPOC">
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=localhost;Initial Catalog=POC_SatisYZ;TrustServerCertificate=True</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="SonKayitlar">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT KayitId, Etiket FROM denetim.vw_SonKayitlar ORDER BY KayitId DESC</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="KayitId"><DataField>KayitId</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="Etiket"><DataField>Etiket</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <DataSet Name="SonKayitId">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT ISNULL(MAX(KayitId),0) AS KayitId FROM denetim.AjanKayit</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="KayitId"><DataField>KayitId</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <DataSet Name="Kayit">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT KayitId, Zaman, Kullanici, Soru, Durum,
+       ISNULL(REPLACE(Cevap, N'**', N''), N'') AS Cevap,
+       ISNULL(NULLIF(Aciklama, N''), REPLACE(ISNULL(Cevap,N''), N'**', N'')) AS Aciklama,
+       ISNULL(VurguDeger, N'—')  AS VurguDeger,
+       ISNULL(VurguEtiket, N'')  AS VurguEtiket,
+       ISNULL(Metrikler, N'—')   AS Metrikler,
+       ISNULL(Kaynak, N'—')      AS Kaynak,
+       ISNULL(Motor, N'—')       AS Motor,
+       ISNULL(Guven, 0)          AS Guven,
+       ISNULL(SatirSayisi, 0)    AS SatirSayisi,
+       ISNULL(SureMs, 0)         AS SureMs,
+       ISNULL(Belirsizlik, N'')  AS Belirsizlik
+FROM denetim.AjanKayit
+WHERE KayitId = @pKayitId</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@pKayitId"><Value>=Parameters!pKayitId.Value</Value></QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="KayitId"><DataField>KayitId</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="Zaman"><DataField>Zaman</DataField><rd:TypeName>System.DateTime</rd:TypeName></Field>
+        <Field Name="Kullanici"><DataField>Kullanici</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Soru"><DataField>Soru</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Durum"><DataField>Durum</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Cevap"><DataField>Cevap</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Aciklama"><DataField>Aciklama</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="VurguDeger"><DataField>VurguDeger</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="VurguEtiket"><DataField>VurguEtiket</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Metrikler"><DataField>Metrikler</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Kaynak"><DataField>Kaynak</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Motor"><DataField>Motor</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Guven"><DataField>Guven</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="SatirSayisi"><DataField>SatirSayisi</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="SureMs"><DataField>SureMs</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="Belirsizlik"><DataField>Belirsizlik</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <DataSet Name="Satir">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT Sira, Etiket, Deger
+FROM denetim.AjanKayitSatir
+WHERE KayitId = @pKayitId AND Seri = N'cevap'
+ORDER BY Sira</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@pKayitId"><Value>=Parameters!pKayitId.Value</Value></QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="Sira"><DataField>Sira</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="Etiket"><DataField>Etiket</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Deger"><DataField>Deger</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <DataSet Name="Trend">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT Sira AS DonemKey, Etiket AS DonemAd, Deger
+FROM denetim.AjanKayitSatir
+WHERE KayitId = @pKayitId AND Seri = N'trend'
+ORDER BY Sira</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@pKayitId"><Value>=Parameters!pKayitId.Value</Value></QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="DonemKey"><DataField>DonemKey</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="DonemAd"><DataField>DonemAd</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Deger"><DataField>Deger</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        
+      </Fields>
+    </DataSet>
+
+    <DataSet Name="Hedefe">
+      <Query>
+        <DataSourceName>dsPOC</DataSourceName>
+        <CommandText>SELECT Sira AS DonemKey, Etiket AS DonemAd, Deger AS Gerceklesme
+FROM denetim.AjanKayitSatir
+WHERE KayitId = @pKayitId AND Seri = N'hedef'
+ORDER BY Sira</CommandText>
+        <QueryParameters>
+          <QueryParameter Name="@pKayitId"><Value>=Parameters!pKayitId.Value</Value></QueryParameter>
+        </QueryParameters>
+      </Query>
+      <Fields>
+        <Field Name="DonemKey"><DataField>DonemKey</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="DonemAd"><DataField>DonemAd</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Gerceklesme"><DataField>Gerceklesme</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportParameters>
+    <ReportParameter Name="pKayitId">
+      <DataType>Integer</DataType>
+      <Prompt>Soru</Prompt>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>SonKayitlar</DataSetName>
+          <ValueField>KayitId</ValueField>
+          <LabelField>Etiket</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>SonKayitId</DataSetName>
+          <ValueField>KayitId</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+    </ReportParameter>
+  </ReportParameters>
+
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+
+  <ReportSections>
+  <ReportSection>
+  <Body>
+    <ReportItems>
+
+      <Textbox Name="txtMarka">
+        <Top>0in</Top><Left>0in</Left><Height>0.22in</Height><Width>3.6in</Width>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>YÖNETİCİ ASİSTANI // CEVAP KARTI</Value>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><VerticalAlign>Middle</VerticalAlign><PaddingLeft>2pt</PaddingLeft></Style>
+      </Textbox>
+
+      <Textbox Name="txtZaman">
+        <Top>0in</Top><Left>3.6in</Left><Height>0.22in</Height><Width>3.8in</Width>
+        <Paragraphs><Paragraph>
+          <TextRuns><TextRun>
+            <Value>=Format(First(Fields!Zaman.Value,"Kayit"),"dd.MM.yyyy HH:mm") &amp; "   /   #" &amp;
+                    First(Fields!KayitId.Value,"Kayit") &amp; "   /   " &amp; First(Fields!Kullanici.Value,"Kayit")</Value>
+            <Style><FontFamily>Consolas</FontFamily><FontSize>7.5pt</FontSize><Color>#5E8195</Color></Style>
+          </TextRun></TextRuns>
+          <Style><TextAlign>Right</TextAlign></Style>
+        </Paragraph></Paragraphs>
+        <Style><VerticalAlign>Middle</VerticalAlign><PaddingRight>2pt</PaddingRight></Style>
+      </Textbox>
+
+      <Textbox Name="cizgiUst">
+        <Top>0.24in</Top><Left>0in</Left><Height>0.03in</Height><Width>7.4in</Width>
+        <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><BackgroundColor>#35E0E8</BackgroundColor><BackgroundGradientType>LeftRight</BackgroundGradientType>
+               <BackgroundGradientEndColor>#070B10</BackgroundGradientEndColor></Style>
+      </Textbox>
+
+      <!-- Sorunun hemen altinda, cumle halinde cevap. Buyuk sayi kaniti,
+           bu satir ise okunabilir cevabin kendisi: "En yuksek ciro
+           2025-12 doneminde gerceklesti: 103,7 mn TL." -->
+      <Textbox Name="txtCevapCumle">
+        <Top>0.36in</Top><Left>0in</Left><Height>0.44in</Height><Width>7.4in</Width>
+        <CanGrow>true</CanGrow>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>=First(Fields!Aciklama.Value,"Kayit")</Value>
+          <Style><FontFamily>Segoe UI</FontFamily><FontSize>12.5pt</FontSize>
+                 <FontWeight>SemiBold</FontWeight><Color>#8FD9DE</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><LeftBorder><Color>#0B8F98</Color><Style>Solid</Style><Width>3pt</Width></LeftBorder>
+               <VerticalAlign>Middle</VerticalAlign>
+               <PaddingLeft>9pt</PaddingLeft><PaddingTop>3pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style>
+      </Textbox>
+
+      <Rectangle Name="heroPanel">
+        <Top>0.90in</Top><Left>0in</Left><Height>0.98in</Height><Width>7.4in</Width>
+        <ReportItems>
+
+          <Textbox Name="txtDurum">
+            <Top>0.08in</Top><Left>0.16in</Left><Height>0.18in</Height><Width>3.0in</Width>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>=Switch(
+                  First(Fields!Durum.Value,"Kayit")="ok",          "> CEVAPLANDI",
+                  First(Fields!Durum.Value,"Kayit")="netlestir",   "> NETLESTIRME GEREKLI",
+                  First(Fields!Durum.Value,"Kayit")="kapsam_disi", "> KAPSAM DISI",
+                  First(Fields!Durum.Value,"Kayit")="yetkisiz",    "> YETKISIZ",
+                  True,                                            "> HATA")</Value>
+              <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight>
+                     <Color>=Switch(
+                        First(Fields!Durum.Value,"Kayit")="ok",        "#3DDC97",
+                        First(Fields!Durum.Value,"Kayit")="netlestir", "#FFB347",
+                        True,                                          "#FF5C7A")</Color></Style>
+            </TextRun></TextRuns></Paragraph></Paragraphs>
+            <Style><VerticalAlign>Middle</VerticalAlign></Style>
+          </Textbox>
+
+          <Textbox Name="txtVurgu">
+            <Top>0.26in</Top><Left>0.16in</Left><Height>0.50in</Height><Width>4.6in</Width>
+            <CanGrow>true</CanGrow>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>=First(Fields!VurguDeger.Value,"Kayit")</Value>
+              <Style><FontFamily>Segoe UI</FontFamily><FontSize>30pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+            </TextRun></TextRuns></Paragraph></Paragraphs>
+            <Style><VerticalAlign>Middle</VerticalAlign></Style>
+          </Textbox>
+
+          <Textbox Name="txtVurguEtiket">
+            <Top>0.76in</Top><Left>0.18in</Left><Height>0.18in</Height><Width>4.6in</Width>
+            <CanGrow>true</CanGrow>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>=UCase(First(Fields!VurguEtiket.Value,"Kayit"))</Value>
+              <Style><FontFamily>Consolas</FontFamily><FontSize>7.5pt</FontSize><Color>#5E8195</Color></Style>
+            </TextRun></TextRuns></Paragraph></Paragraphs>
+          </Textbox>
+
+          <Textbox Name="txtGuvenBar">
+            <Top>0.30in</Top><Left>5.0in</Left><Height>0.22in</Height><Width>2.3in</Width>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>=StrDup(CInt(Round(First(Fields!Guven.Value,"Kayit") * 18)), "|") &amp;
+                      StrDup(18 - CInt(Round(First(Fields!Guven.Value,"Kayit") * 18)), ".")</Value>
+              <Style><FontFamily>Consolas</FontFamily><FontSize>11pt</FontSize>
+                     <Color>=IIf(First(Fields!Guven.Value,"Kayit") &gt;= 0.85, "#3DDC97",
+                              IIf(First(Fields!Guven.Value,"Kayit") &gt;= 0.7, "#FFB347", "#FF5C7A"))</Color></Style>
+            </TextRun></TextRuns></Paragraph></Paragraphs>
+          </Textbox>
+
+          <Textbox Name="txtGuvenDeger">
+            <Top>0.52in</Top><Left>5.0in</Left><Height>0.20in</Height><Width>2.3in</Width>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>="guven " &amp; Format(First(Fields!Guven.Value,"Kayit"), "0%") &amp; "   /   " &amp;
+                      First(Fields!SureMs.Value,"Kayit") &amp; " ms   /   " &amp;
+                      First(Fields!SatirSayisi.Value,"Kayit") &amp; " satir"</Value>
+              <Style><FontFamily>Consolas</FontFamily><FontSize>7.5pt</FontSize><Color>#5E8195</Color></Style>
+            </TextRun></TextRuns></Paragraph></Paragraphs>
+          </Textbox>
+
+        </ReportItems>
+        <Style>
+          <LeftBorder><Color>#35E0E8</Color><Style>Solid</Style><Width>4pt</Width></LeftBorder>
+          <BackgroundColor>#0E1520</BackgroundColor>
+          <BackgroundGradientType>LeftRight</BackgroundGradientType>
+          <BackgroundGradientEndColor>#070B10</BackgroundGradientEndColor>
+        </Style>
+      </Rectangle>
+
+      <Textbox Name="lblCevap">
+        <Top>2.00in</Top><Left>0in</Left><Height>0.16in</Height><Width>7.4in</Width>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>01 // CEVAP</Value>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><PaddingLeft>2pt</PaddingLeft></Style>
+      </Textbox>
+
+      <Chart Name="grafikCevap">
+        <Top>2.18in</Top><Left>0in</Left><Height>1.70in</Height><Width>7.4in</Width>
+        <DataSetName>Satir</DataSetName>
+        <ChartCategoryHierarchy>
+          <ChartMembers>
+            <ChartMember>
+              <Group Name="gCevap"><GroupExpressions><GroupExpression>=Fields!Etiket.Value</GroupExpression></GroupExpressions></Group>
+              <SortExpressions><SortExpression><Value>=Fields!Sira.Value</Value><Direction>Descending</Direction></SortExpression></SortExpressions>
+              <Label>=Fields!Etiket.Value</Label>
+            </ChartMember>
+          </ChartMembers>
+        </ChartCategoryHierarchy>
+        <ChartSeriesHierarchy><ChartMembers><ChartMember><Label>Deger</Label></ChartMember></ChartMembers></ChartSeriesHierarchy>
+        <ChartData>
+          <ChartSeriesCollection>
+            <ChartSeries Name="sCevap">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues><Y>=Sum(Fields!Deger.Value)</Y></ChartDataPointValues>
+                <ChartDataLabel>
+                  <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><Color>#C6DEE8</Color></Style>
+                  <!-- Tek satirlik cevapta rakam zaten dev puntoyla ustte;
+                       etiket onu tekrarlamasin. Cok satirda ise deger
+                       eksenini gizledigimiz icin tek sayi kaynagi bu. -->
+                  <Visible>=IIf(CountRows("Satir") &gt; 1, True, False)</Visible>
+                  <Position>Outside</Position><UseValueAsLabel>false</UseValueAsLabel>
+                  <Label>=Format(Sum(Fields!Deger.Value), "#,0")</Label>
+                </ChartDataLabel>
+                <Style><BackgroundColor>#35E0E8</BackgroundColor>
+                       <BackgroundGradientType>LeftRight</BackgroundGradientType>
+                       <BackgroundGradientEndColor>#0B8F98</BackgroundGradientEndColor></Style>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Bar</Type><Subtype>Plain</Subtype>
+              <ValueAxisName>V1</ValueAxisName><CategoryAxisName>K1</CategoryAxisName><ChartAreaName>A1</ChartAreaName>
+            </ChartSeries>
+          </ChartSeriesCollection>
+        </ChartData>
+        <ChartAreas>
+          <ChartArea Name="A1">
+            <ChartCategoryAxes><ChartAxis Name="K1">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><Color>#7FA3B5</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+            </ChartAxis></ChartCategoryAxes>
+            <ChartValueAxes><ChartAxis Name="V1">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><Color>#3E5C70</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>true</Enabled>
+                <Style><Border><Color>#16273A</Color><Style>Solid</Style><Width>1pt</Width></Border></Style>
+              </ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+              <HideLabels>true</HideLabels>
+            </ChartAxis></ChartValueAxes>
+            <Style><BackgroundColor>#070B10</BackgroundColor></Style>
+          </ChartArea>
+        </ChartAreas>
+        <ChartLegends><ChartLegend Name="L1"><Style><Border><Style>None</Style></Border></Style><Hidden>true</Hidden></ChartLegend></ChartLegends>
+        <ChartNoDataMessage Name="N1">
+          <Caption>Reddedilen soru — sonuc kumesi yok.</Caption>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>9pt</FontSize><Color>#3E5C70</Color></Style>
+        </ChartNoDataMessage>
+        <Palette>Custom</Palette>
+        <ChartCustomPaletteColors><ChartCustomPaletteColor>#35E0E8</ChartCustomPaletteColor></ChartCustomPaletteColors>
+        <Style><Border><Style>None</Style></Border><BackgroundColor>#070B10</BackgroundColor></Style>
+      </Chart>
+
+      <Textbox Name="lblTrend">
+        <Top>4.00in</Top><Left>0in</Left><Height>0.16in</Height><Width>3.6in</Width>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>="02 // TREND — " &amp; UCase(Split(First(Fields!Metrikler.Value,"Kayit") &amp; " ·", " ·")(0))</Value>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><PaddingLeft>2pt</PaddingLeft></Style>
+      </Textbox>
+
+      <Chart Name="grafikTrend">
+        <Top>4.18in</Top><Left>0in</Left><Height>1.55in</Height><Width>3.6in</Width>
+        <DataSetName>Trend</DataSetName>
+        <ChartCategoryHierarchy>
+          <ChartMembers>
+            <ChartMember>
+              <Group Name="gTrend"><GroupExpressions><GroupExpression>=Fields!DonemAd.Value</GroupExpression></GroupExpressions></Group>
+              <SortExpressions><SortExpression><Value>=Fields!DonemKey.Value</Value></SortExpression></SortExpressions>
+              <Label>=Right(Fields!DonemAd.Value, 2)</Label>
+            </ChartMember>
+          </ChartMembers>
+        </ChartCategoryHierarchy>
+        <ChartSeriesHierarchy><ChartMembers><ChartMember><Label>Deger</Label></ChartMember></ChartMembers></ChartSeriesHierarchy>
+        <ChartData>
+          <ChartSeriesCollection>
+            <ChartSeries Name="sTrend">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues><Y>=Sum(Fields!Deger.Value)</Y></ChartDataPointValues>
+                <Style><BackgroundColor>#0B8F98</BackgroundColor>
+                       <BackgroundGradientType>TopBottom</BackgroundGradientType>
+                       <BackgroundGradientEndColor>#35E0E8</BackgroundGradientEndColor></Style>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Column</Type><Subtype>Plain</Subtype>
+              <ValueAxisName>V2</ValueAxisName><CategoryAxisName>K2</CategoryAxisName><ChartAreaName>A2</ChartAreaName>
+            </ChartSeries>
+          </ChartSeriesCollection>
+        </ChartData>
+        <ChartAreas>
+          <ChartArea Name="A2">
+            <ChartCategoryAxes><ChartAxis Name="K2">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>6.5pt</FontSize><Color>#5E8195</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+              <LabelInterval>1</LabelInterval>
+            </ChartAxis></ChartCategoryAxes>
+            <ChartValueAxes><ChartAxis Name="V2">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>6.5pt</FontSize><Color>#3E5C70</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>true</Enabled>
+                <Style><Border><Color>#16273A</Color><Style>Solid</Style><Width>1pt</Width></Border></Style>
+              </ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+            </ChartAxis></ChartValueAxes>
+            <Style><BackgroundColor>#070B10</BackgroundColor></Style>
+          </ChartArea>
+        </ChartAreas>
+        <ChartLegends><ChartLegend Name="L2"><Style><Border><Style>None</Style></Border></Style><Hidden>true</Hidden></ChartLegend></ChartLegends>
+        <Palette>Custom</Palette>
+        <ChartCustomPaletteColors><ChartCustomPaletteColor>#35E0E8</ChartCustomPaletteColor></ChartCustomPaletteColors>
+        <Style><Border><Style>None</Style></Border><BackgroundColor>#070B10</BackgroundColor></Style>
+      </Chart>
+
+      <Textbox Name="lblHedef">
+        <Top>4.00in</Top><Left>3.8in</Left><Height>0.16in</Height><Width>3.6in</Width>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>03 // HEDEF GERCEKLESME %</Value>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><PaddingLeft>2pt</PaddingLeft></Style>
+      </Textbox>
+
+      <Chart Name="grafikHedef">
+        <Top>4.18in</Top><Left>3.8in</Left><Height>1.55in</Height><Width>3.6in</Width>
+        <DataSetName>Hedefe</DataSetName>
+        <ChartCategoryHierarchy>
+          <ChartMembers>
+            <ChartMember>
+              <Group Name="gHedef"><GroupExpressions><GroupExpression>=Fields!DonemAd.Value</GroupExpression></GroupExpressions></Group>
+              <SortExpressions><SortExpression><Value>=Fields!DonemKey.Value</Value></SortExpression></SortExpressions>
+              <Label>=Right(Fields!DonemAd.Value, 2)</Label>
+            </ChartMember>
+          </ChartMembers>
+        </ChartCategoryHierarchy>
+        <!-- Tek serili grafikte palet, veri noktasi renk ifadesini eziyor.
+             Bu yuzden iki seri: hedefi tutan ve tutmayan. Yigilmis oldugu
+             icin ayni kategoride yan yana degil, ayni yerde cizilirler. -->
+        <ChartSeriesHierarchy>
+          <ChartMembers>
+            <ChartMember><Label>Hedefi tutan</Label></ChartMember>
+            <ChartMember><Label>Hedefin altinda</Label></ChartMember>
+          </ChartMembers>
+        </ChartSeriesHierarchy>
+        <ChartData>
+          <ChartSeriesCollection>
+            <ChartSeries Name="sTutan">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues>
+                  <Y>=IIf(Sum(Fields!Gerceklesme.Value) &gt;= 100, Sum(Fields!Gerceklesme.Value), Nothing)</Y>
+                </ChartDataPointValues>
+                <Style><BackgroundColor>#3DDC97</BackgroundColor></Style>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Column</Type><Subtype>Stacked</Subtype>
+              <ValueAxisName>V3</ValueAxisName><CategoryAxisName>K3</CategoryAxisName><ChartAreaName>A3</ChartAreaName>
+            </ChartSeries>
+            <ChartSeries Name="sTutmayan">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues>
+                  <Y>=IIf(Sum(Fields!Gerceklesme.Value) &lt; 100, Sum(Fields!Gerceklesme.Value), Nothing)</Y>
+                </ChartDataPointValues>
+                <Style><BackgroundColor>#FF5C7A</BackgroundColor></Style>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Column</Type><Subtype>Stacked</Subtype>
+              <ValueAxisName>V3</ValueAxisName><CategoryAxisName>K3</CategoryAxisName><ChartAreaName>A3</ChartAreaName>
+            </ChartSeries>
+          </ChartSeriesCollection>
+        </ChartData>
+        <ChartAreas>
+          <ChartArea Name="A3">
+            <ChartCategoryAxes><ChartAxis Name="K3">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>6.5pt</FontSize><Color>#5E8195</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+              <LabelInterval>1</LabelInterval>
+            </ChartAxis></ChartCategoryAxes>
+            <ChartValueAxes><ChartAxis Name="V3">
+              <Style><FontFamily>Consolas</FontFamily><FontSize>6.5pt</FontSize><Color>#3E5C70</Color></Style>
+              <ChartAxisTitle><Caption /></ChartAxisTitle>
+              <ChartMajorGridLines><Enabled>true</Enabled>
+                <Style><Border><Color>#16273A</Color><Style>Solid</Style><Width>1pt</Width></Border></Style>
+              </ChartMajorGridLines>
+              <ChartMinorGridLines><Enabled>false</Enabled><Style><Border><Style>None</Style></Border></Style></ChartMinorGridLines>
+              <ChartMajorTickMarks><Enabled>false</Enabled></ChartMajorTickMarks>
+              <ChartMinorTickMarks><Enabled>false</Enabled></ChartMinorTickMarks>
+              <Minimum>60</Minimum>
+            </ChartAxis></ChartValueAxes>
+            <Style><BackgroundColor>#070B10</BackgroundColor></Style>
+          </ChartArea>
+        </ChartAreas>
+        <ChartLegends><ChartLegend Name="L3"><Style><Border><Style>None</Style></Border></Style><Hidden>true</Hidden></ChartLegend></ChartLegends>
+        <!-- Iki seri var: palet artik NOKTA bazinda degil SERI bazinda renk
+             atiyor. Sira onemli: 1. seri hedefi tutan (yesil), 2. seri altinda
+             kalan (kirmizi). Veri noktasi Style'i palet tarafindan eziliyordu. -->
+        <Palette>Custom</Palette>
+        <ChartCustomPaletteColors>
+          <ChartCustomPaletteColor>#3DDC97</ChartCustomPaletteColor>
+          <ChartCustomPaletteColor>#FF5C7A</ChartCustomPaletteColor>
+        </ChartCustomPaletteColors>
+        <Style><Border><Style>None</Style></Border><BackgroundColor>#070B10</BackgroundColor></Style>
+      </Chart>
+
+      <Textbox Name="txtKunye">
+        <Top>5.86in</Top><Left>0in</Left><Height>0.20in</Height><Width>7.4in</Width>
+        <CanGrow>true</CanGrow>
+        <Paragraphs><Paragraph><TextRuns><TextRun>
+          <Value>=First(Fields!Metrikler.Value,"Kayit") &amp; "   ·   " &amp;
+                  First(Fields!Kaynak.Value,"Kayit") &amp; "   ·   " &amp;
+                  First(Fields!Motor.Value,"Kayit") &amp;
+                  IIf(Len(First(Fields!Belirsizlik.Value,"Kayit")) &gt; 0,
+                      "   ·   varsayim: " &amp; First(Fields!Belirsizlik.Value,"Kayit"), "")</Value>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize>
+                 <Color>=IIf(Len(First(Fields!Belirsizlik.Value,"Kayit")) &gt; 0, "#FFB347", "#5E8195")</Color></Style>
+        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Style><TopBorder><Color>#1E3346</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+               <PaddingLeft>2pt</PaddingLeft><PaddingTop>4pt</PaddingTop></Style>
+      </Textbox>
+
+    </ReportItems>
+    <Height>6.24in</Height>
+    <Style><BackgroundColor>#070B10</BackgroundColor></Style>
+  </Body>
+  <Width>7.4in</Width>
+
+  <Page>
+    <PageHeight>7.0in</PageHeight>
+    <PageWidth>8.0in</PageWidth>
+    <LeftMargin>0.3in</LeftMargin>
+    <RightMargin>0.3in</RightMargin>
+    <TopMargin>0.3in</TopMargin>
+    <BottomMargin>0.3in</BottomMargin>
+    <Style><BackgroundColor>#070B10</BackgroundColor></Style>
+  </Page>
+  </ReportSection>
+  </ReportSections>
+</Report>

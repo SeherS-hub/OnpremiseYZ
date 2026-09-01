@@ -1,0 +1,1612 @@
+<title>KapalÄ± Devre YÃ¶netici AsistanÄ±</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root{
+  --paper:#F2F5F6; --surface:#FFFFFF; --surface-2:#E8EEF0; --surface-3:#DEE6E9;
+  --ink:#141A20; --ink-2:#48565D; --ink-3:#74838A;
+  --line:#D2DBDF; --line-2:#B8C5CB;
+  --accent:#1B5C77; --accent-ink:#134253; --accent-soft:#DBEAF0;
+  --copper:#A9541E; --copper-soft:#F7E8DC;
+  --good:#2C6B4C; --good-soft:#DFEDE5;
+  --crit:#93262B; --crit-soft:#F6E2E2;
+  --code-bg:#EBF0F2;
+  --shadow:0 1px 2px rgba(20,26,32,.06), 0 8px 24px -16px rgba(20,26,32,.18);
+  --f-display:"Archivo","Segoe UI",system-ui,sans-serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono","Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1317; --surface:#151C21; --surface-2:#1C252B; --surface-3:#233037;
+    --ink:#E4EBEE; --ink-2:#A6B5BC; --ink-3:#7B8B92;
+    --line:#293439; --line-2:#3A474E;
+    --accent:#6BB2CA; --accent-ink:#9BD0E2; --accent-soft:#15303B;
+    --copper:#DE9257; --copper-soft:#31221A;
+    --good:#6EBE96; --good-soft:#16291F;
+    --crit:#E2777B; --crit-soft:#2C1618;
+    --code-bg:#101A1F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1317; --surface:#151C21; --surface-2:#1C252B; --surface-3:#233037;
+  --ink:#E4EBEE; --ink-2:#A6B5BC; --ink-3:#7B8B92;
+  --line:#293439; --line-2:#3A474E;
+  --accent:#6BB2CA; --accent-ink:#9BD0E2; --accent-soft:#15303B;
+  --copper:#DE9257; --copper-soft:#31221A;
+  --good:#6EBE96; --good-soft:#16291F;
+  --crit:#E2777B; --crit-soft:#2C1618;
+  --code-bg:#101A1F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); font-size:17px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,.u{font-family:var(--f-display)}
+h1,h2,h3,h4{text-wrap:balance; margin:0}
+a{color:var(--accent); text-decoration:none; border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
+a:hover{border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+.u{ /* utility label */
+  font-size:.68rem; font-weight:600; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink-3);
+}
+
+/* ---------- shell ---------- */
+.doc{max-width:80rem; margin:0 auto; padding:0 clamp(1rem,4vw,2.5rem)}
+.grid{display:grid; grid-template-columns:15rem minmax(0,1fr); gap:clamp(2rem,5vw,4.5rem); align-items:start}
+@media (max-width:1020px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+nav.toc{position:sticky; top:0; max-height:100vh; overflow-y:auto; padding:2.6rem 0 3rem; font-family:var(--f-display)}
+@media (max-width:1020px){
+  nav.toc{position:static; max-height:none; padding:1.5rem 0 0;
+    border-bottom:1px solid var(--line)}
+}
+nav.toc ol{list-style:none; margin:.9rem 0 0; padding:0; display:flex; flex-direction:column; gap:.05rem}
+@media (max-width:1020px){nav.toc ol{display:grid; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr)); gap:.1rem .8rem; margin-bottom:1.4rem}}
+nav.toc a{
+  display:grid; grid-template-columns:1.9rem 1fr; gap:.2rem;
+  font-size:.82rem; line-height:1.35; padding:.34rem .5rem .34rem .2rem;
+  color:var(--ink-2); border:0; border-radius:3px;
+}
+nav.toc a:hover{background:var(--surface-2); color:var(--ink)}
+nav.toc a b{font-variant-numeric:tabular-nums; font-weight:500; color:var(--ink-3); font-family:var(--f-mono); font-size:.74rem}
+nav.toc .g{margin-top:1rem; padding:0 .2rem .3rem; border-top:1px solid var(--line); padding-top:.9rem}
+nav.toc .g:first-child{margin-top:0; border-top:0; padding-top:0}
+
+main{padding:2.6rem 0 6rem; min-width:0}
+
+/* ---------- cover ---------- */
+.cover{border-top:3px solid var(--ink); padding-top:1.4rem}
+.cover h1{
+  font-size:clamp(2.1rem,5.6vw,3.4rem); font-weight:700; letter-spacing:-.022em;
+  line-height:1.02; margin:.7rem 0 .5rem;
+}
+.cover .sub{
+  font-size:clamp(1.02rem,2.2vw,1.2rem); color:var(--ink-2); max-width:52ch;
+  font-family:var(--f-display); font-weight:400; line-height:1.45;
+}
+.kÃ¼nye{
+  margin:2rem 0 0; border:1px solid var(--line); background:var(--surface);
+  border-radius:4px; box-shadow:var(--shadow); overflow:hidden;
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));
+}
+.kÃ¼nye div{padding:.75rem .9rem; border-right:1px solid var(--line); border-bottom:1px solid var(--line)}
+.kÃ¼nye dt{font-family:var(--f-display); font-size:.63rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3)}
+.kÃ¼nye dd{margin:.28rem 0 0; font-family:var(--f-mono); font-size:.83rem; color:var(--ink)}
+
+/* ---------- sections ---------- */
+section{padding-top:3.2rem; scroll-margin-top:1rem}
+section > .head{border-bottom:1px solid var(--line-2); padding-bottom:.5rem; margin-bottom:1.4rem}
+section > .head .n{font-family:var(--f-mono); font-size:.8rem; color:var(--copper); font-weight:500}
+section h2{font-size:clamp(1.34rem,3vw,1.72rem); font-weight:600; letter-spacing:-.014em; margin-top:.15rem}
+h3{font-size:1.06rem; font-weight:600; letter-spacing:-.005em; margin:2.1rem 0 .55rem; color:var(--ink)}
+h3 .n{font-family:var(--f-mono); font-size:.82rem; color:var(--ink-3); font-weight:500; margin-right:.45rem}
+h4{font-family:var(--f-display); font-size:.76rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:1.5rem 0 .5rem}
+
+p,ul,ol{max-width:68ch}
+p{margin:0 0 .9rem}
+ul,ol{margin:0 0 1rem; padding-left:1.3rem}
+li{margin:.3rem 0}
+li::marker{color:var(--ink-3)}
+ul.tight li, ol.tight li{margin:.14rem 0}
+strong{font-weight:600}
+em{font-style:italic; color:var(--ink)}
+code{font-family:var(--f-mono); font-size:.86em; background:var(--code-bg); padding:.08em .32em; border-radius:3px; color:var(--ink)}
+.lead{font-size:1.08rem; color:var(--ink-2)}
+
+/* ---------- wide blocks ---------- */
+.wide{max-width:none; margin:1.3rem 0 1.6rem}
+.scroll{overflow-x:auto; border:1px solid var(--line); border-radius:4px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-family:var(--f-display); font-size:.83rem; min-width:38rem}
+thead th{
+  text-align:left; font-weight:600; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-3); background:var(--surface-2); padding:.6rem .75rem;
+  border-bottom:1px solid var(--line-2); white-space:nowrap;
+}
+td{padding:.58rem .75rem; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.45}
+tbody tr:last-child td{border-bottom:0}
+td.num,td .num{font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+td.id{font-family:var(--f-mono); font-size:.78rem; color:var(--copper); white-space:nowrap}
+caption{caption-side:bottom; text-align:left; font-family:var(--f-display); font-size:.73rem; color:var(--ink-3); padding:.55rem .1rem 0; max-width:74ch}
+pre{
+  margin:0; padding:1rem 1.1rem; background:var(--code-bg); border:1px solid var(--line);
+  border-radius:4px; overflow-x:auto; font-family:var(--f-mono); font-size:.78rem;
+  line-height:1.6; color:var(--ink);
+}
+pre b{color:var(--accent-ink); font-weight:600}
+pre i{color:var(--ink-3); font-style:normal}
+
+/* ---------- pills ---------- */
+.pill{
+  display:inline-block; font-family:var(--f-display); font-size:.64rem; font-weight:600;
+  letter-spacing:.09em; text-transform:uppercase; padding:.16rem .45rem; border-radius:3px;
+  border:1px solid var(--line-2); color:var(--ink-2); background:var(--surface-2); white-space:nowrap;
+}
+.pill.ok{color:var(--good); background:var(--good-soft); border-color:color-mix(in srgb,var(--good) 30%,transparent)}
+.pill.no{color:var(--crit); background:var(--crit-soft); border-color:color-mix(in srgb,var(--crit) 30%,transparent)}
+.pill.mid{color:var(--copper); background:var(--copper-soft); border-color:color-mix(in srgb,var(--copper) 30%,transparent)}
+.pill.acc{color:var(--accent-ink); background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+
+/* ---------- callouts ---------- */
+.box{
+  max-width:74ch; margin:1.3rem 0; padding:.95rem 1.1rem; background:var(--surface);
+  border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 4px 4px 0;
+}
+.box.karar{border-left-color:var(--copper)}
+.box.risk{border-left-color:var(--crit)}
+.box .t{font-family:var(--f-display); font-size:.68rem; font-weight:600; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); margin-bottom:.35rem}
+.box p:last-child,.box ul:last-child{margin-bottom:0}
+.box p,.box ul{max-width:none; font-size:.95rem}
+
+/* ---------- architecture diagram ---------- */
+.arch{display:flex; flex-direction:column; gap:.5rem; font-family:var(--f-display)}
+.layer{
+  display:grid; grid-template-columns:8.5rem minmax(0,1fr); gap:.9rem; align-items:stretch;
+  background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:.7rem .8rem;
+}
+@media (max-width:720px){.layer{grid-template-columns:minmax(0,1fr); gap:.5rem}}
+.layer > .lb{
+  font-size:.66rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--ink-3); padding-top:.35rem; border-right:1px solid var(--line); padding-right:.6rem;
+}
+@media (max-width:720px){.layer > .lb{border-right:0; border-bottom:1px solid var(--line); padding-bottom:.35rem}}
+.nodes{display:flex; flex-wrap:wrap; gap:.35rem}
+.node{
+  font-size:.78rem; padding:.34rem .55rem; border-radius:3px; background:var(--surface-2);
+  border:1px solid var(--line-2); color:var(--ink); line-height:1.3;
+}
+.node.k{background:var(--accent-soft); border-color:color-mix(in srgb,var(--accent) 38%,transparent); color:var(--accent-ink); font-weight:600}
+.node.c{background:var(--copper-soft); border-color:color-mix(in srgb,var(--copper) 35%,transparent); color:var(--copper); font-weight:600}
+.node small{display:block; font-family:var(--f-mono); font-size:.64rem; color:var(--ink-3); font-weight:400}
+.perimeter{
+  border:1px dashed var(--line-2); border-radius:6px; padding:.7rem; background:color-mix(in srgb,var(--surface-2) 45%,transparent);
+}
+.perimeter .cap{display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin:0 .3rem .55rem; font-size:.66rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-family:var(--f-display)}
+
+/* ---------- flow steps ---------- */
+.flow{counter-reset:s; display:grid; gap:.4rem; max-width:none; list-style:none; padding:0; margin:1.3rem 0}
+.flow li{
+  counter-increment:s; display:grid; grid-template-columns:2rem minmax(0,1fr); gap:.7rem;
+  background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:.6rem .75rem; margin:0;
+}
+.flow li::before{
+  content:counter(s,decimal-leading-zero); font-family:var(--f-mono); font-size:.74rem; font-weight:600;
+  color:var(--copper); padding-top:.12rem;
+}
+.flow .w{font-family:var(--f-display); font-size:.9rem}
+.flow .w b{font-weight:600}
+.flow .w span{display:block; color:var(--ink-2); font-size:.82rem; margin-top:.1rem}
+.flow .w em{font-family:var(--f-mono); font-style:normal; font-size:.75rem; color:var(--accent-ink); background:var(--accent-soft); padding:.05em .3em; border-radius:2px}
+
+/* ---------- cards ---------- */
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(16rem,1fr)); gap:.7rem; max-width:none; margin:1.3rem 0}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:4px; padding:.85rem .95rem}
+.card .h{font-family:var(--f-display); font-weight:600; font-size:.92rem; margin-bottom:.3rem}
+.card p{font-size:.87rem; color:var(--ink-2); margin:0; max-width:none}
+.card p + p{margin-top:.5rem}
+
+hr{border:0; border-top:1px solid var(--line); margin:2.6rem 0 0; max-width:none}
+footer{padding:2rem 0 4rem; color:var(--ink-3); font-family:var(--f-display); font-size:.8rem; max-width:70ch}
+</style>
+
+<div class="doc">
+<div class="grid">
+
+<nav class="toc" aria-label="Ä°Ã§indekiler">
+  <div class="u">Spesifikasyon Â· v0.9</div>
+  <ol>
+    <li class="g"><a href="#s0"><b>00</b><span>YÃ¶netici Ã¶zeti ve karar</span></a></li>
+    <li><a href="#s1"><b>01</b><span>AmaÃ§, kapsam, kapsam dÄ±ÅŸÄ±</span></a></li>
+    <li><a href="#s2"><b>02</b><span>KullanÄ±cÄ±lar ve senaryolar</span></a></li>
+    <li><a href="#s3"><b>03</b><span>KÄ±sÄ±tlar ve varsayÄ±mlar</span></a></li>
+    <li class="g"><a href="#s4"><b>04</b><span>Mimari genel gÃ¶rÃ¼nÃ¼m</span></a></li>
+    <li><a href="#s5"><b>05</b><span>CPU Ã¼zerinde LLM katmanÄ±</span></a></li>
+    <li><a href="#s6"><b>06</b><span>Anlam sÃ¶zleÅŸmesi</span></a></li>
+    <li><a href="#s7"><b>07</b><span>Sorgu Ã¼retim stratejisi</span></a></li>
+    <li><a href="#s8"><b>08</b><span>Ajan mimarisi</span></a></li>
+    <li class="g"><a href="#s9"><b>09</b><span>GÃ¼venlik ve yetkilendirme</span></a></li>
+    <li><a href="#s10"><b>10</b><span>DoÄŸruluk ve deÄŸerlendirme</span></a></li>
+    <li><a href="#s11"><b>11</b><span>KullanÄ±cÄ± deneyimi</span></a></li>
+    <li><a href="#s12"><b>12</b><span>Platform ve iÅŸletim</span></a></li>
+    <li><a href="#s13"><b>13</b><span>DonanÄ±m ve kapasite</span></a></li>
+    <li class="g"><a href="#s14"><b>14</b><span>UÃ§tan uca deÄŸerlendirme</span></a></li>
+    <li><a href="#s15"><b>15</b><span>Yol haritasÄ±</span></a></li>
+    <li><a href="#s16"><b>16</b><span>Ekip ve sorumluluklar</span></a></li>
+    <li><a href="#s17"><b>17</b><span>Gereksinim listesi</span></a></li>
+    <li><a href="#s18"><b>18</b><span>Kabul kriterleri</span></a></li>
+    <li class="g"><a href="#s19"><b>19</b><span>AÃ§Ä±k kararlar</span></a></li>
+    <li><a href="#s20"><b>20</b><span>Ekler ve sÃ¶zlÃ¼k</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="cover">
+  <div class="u">Teknik Spesifikasyon &amp; Mimari DeÄŸerlendirme</div>
+  <h1>KapalÄ± Devre YÃ¶netici AsistanÄ±</h1>
+  <p class="sub">Kurum iÃ§i veri ambarÄ± ve semantik model Ã¼zerinde doÄŸal dille Ã§alÄ±ÅŸan, tek bir baytÄ± bile kurum dÄ±ÅŸÄ±na Ã§Ä±karmayan, yalnÄ±zca CPU ile koÅŸan LLM + ajan mimarisi.</p>
+  <dl class="kÃ¼nye">
+    <div><dt>DokÃ¼man</dt><dd>ONPREM-YZ-SPEC-001</dd></div>
+    <div><dt>SÃ¼rÃ¼m</dt><dd>0.9 â€” inceleme iÃ§in</dd></div>
+    <div><dt>Tarih</dt><dd>28.08.2026</dd></div>
+    <div><dt>Durum</dt><dd>Onay bekliyor</dd></div>
+    <div><dt>Sahip</dt><dd>Veri &amp; Yapay ZekÃ¢ Platformu</dd></div>
+    <div><dt>Onaylayacaklar</dt><dd>CIO Â· CDO Â· CISO</dd></div>
+    <div><dt>DaÄŸÄ±tÄ±m modeli</dt><dd>Åžirket iÃ§i, internet eriÅŸimsiz</dd></div>
+    <div><dt>HÄ±zlandÄ±rÄ±cÄ±</dt><dd>Yok â€” yalnÄ±zca CPU</dd></div>
+  </dl>
+</header>
+
+<section id="s0">
+  <div class="head"><span class="n">00</span><h2>YÃ¶netici Ã¶zeti ve karar</h2></div>
+
+  <p class="lead">YalnÄ±zca CPU ile Ã§alÄ±ÅŸan, veriyi kurumdan Ã§Ä±karmayan bir yÃ¶netici asistanÄ± <strong>teknik olarak yapÄ±labilir</strong> â€” ancak bir koÅŸulla: dil modelinin iÅŸi <em>veriyi okumak</em> deÄŸil, <em>doÄŸru sorguyu yazmak</em> olmalÄ±dÄ±r. AÄŸÄ±r iÅŸ yÃ¼kÃ¼ veri ambarÄ± motorunda kalÄ±r; modelin Ã¼rettiÄŸi Ã§Ä±ktÄ± birkaÃ§ yÃ¼z token'lÄ±k yapÄ±landÄ±rÄ±lmÄ±ÅŸ bir sorgu tarifidir. Bu tasarÄ±m kararÄ±, CPU'nun dÃ¼ÅŸÃ¼k token Ã¼retim hÄ±zÄ±nÄ± darboÄŸaz olmaktan Ã§Ä±karÄ±r.</p>
+
+  <p>Bunun tersi olan yaklaÅŸÄ±m â€” binlerce satÄ±r veriyi modelin baÄŸlamÄ±na doldurup "sen yorumla" demek â€” GPU'suz bir ortamda Ã§alÄ±ÅŸmaz. 30 bin token'lÄ±k bir baÄŸlamÄ± iÅŸlemek CPU'da onlarca saniye sÃ¼rer, eÅŸzamanlÄ± Ã¼Ã§ kullanÄ±cÄ±da sistem kilitlenir. Projenin baÅŸarÄ±sÄ±, mimarinin hangi iÅŸi nereye verdiÄŸine baÄŸlÄ±dÄ±r; model boyutuna deÄŸil.</p>
+
+  <h4>ÃœÃ§ temel tasarÄ±m kararÄ±</h4>
+  <div class="cards">
+    <div class="card">
+      <div class="h">Model SQL yazmaz, sorgu tarifi yazar</div>
+      <p>LLM, doÄŸrudan T-SQL yerine kÄ±sÄ±tlÄ± bir JSON sorgu spesifikasyonu Ã¼retir (metrik, boyut, filtre, dÃ¶nem). Deterministik bir derleyici bunu SQL veya DAX'a Ã§evirir. Serbest SQL Ã¼retiminin hem doÄŸruluk hem gÃ¼venlik maliyeti Ã§ok yÃ¼ksektir.</p>
+    </div>
+    <div class="card">
+      <div class="h">DoÄŸruluk modelde deÄŸil, metadata'da</div>
+      <p>OnaylÄ± metrik kaydÄ±, iÅŸ sÃ¶zlÃ¼ÄŸÃ¼, TÃ¼rkÃ§e eÅŸanlamlÄ± sÃ¶zlÃ¼ÄŸÃ¼ ve boyut deÄŸer sÃ¶zlÃ¼ÄŸÃ¼ olmadan hiÃ§bir model "geÃ§en Ã§eyrek kÃ¢rlÄ±lÄ±k nasÄ±l?" sorusunu gÃ¼venilir yanÄ±tlayamaz. YatÄ±rÄ±mÄ±n aÄŸÄ±rlÄ±k merkezi buradadÄ±r.</p>
+    </div>
+    <div class="card">
+      <div class="h">Kapsam daraltÄ±lmÄ±ÅŸ, cevap denetlenebilir</div>
+      <p>Sistem kapsam dÄ±ÅŸÄ± soruya cevap uydurmaz; "bu soruyu onaylÄ± metriklerle yanÄ±tlayamÄ±yorum" der. Her cevabÄ±n yanÄ±nda kullanÄ±lan metrik, filtre ve Ã¼retilen sorgu gÃ¶rÃ¼nÃ¼r. YÃ¶netici kararÄ± buna gÃ¼venerek verir.</p>
+    </div>
+  </div>
+
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 00.1 â€” Beklenti Ã§erÃ§evesi. YÃ¼zdeler benzer kurumsal NL2SQL kurulumlarÄ±ndan tÃ¼retilmiÅŸ hedeflerdir; Â§10'daki altÄ±n soru kÃ¼mesiyle doÄŸrulanmadan taahhÃ¼t edilmemelidir.</caption>
+      <thead><tr><th>Boyut</th><th>GerÃ§ekÃ§i hedef (12. ay)</th><th>Not</th></tr></thead>
+      <tbody>
+        <tr><td>Kapsam iÃ§i soruda doÄŸruluk</td><td class="num">%85â€“92 yÃ¼rÃ¼tme doÄŸruluÄŸu</td><td>OnaylÄ± metrik + ÅŸablon kapsamÄ±ndaki sorular</td></tr>
+        <tr><td>AÃ§Ä±k uÃ§lu, kapsam dÄ±ÅŸÄ± soru</td><td class="num">%35â€“55</td><td>Bu yÃ¼zden cevap vermek yerine reddetmeyi tercih ederiz</td></tr>
+        <tr><td>DoÄŸru reddetme oranÄ±</td><td class="num">&gt;%90</td><td>En kritik metrik: yanlÄ±ÅŸ cevap, cevapsÄ±zlÄ±ktan pahalÄ±dÄ±r</td></tr>
+        <tr><td>Ä°lk token gecikmesi</td><td class="num">&lt; 3 sn</td><td>YÃ¶nlendirici model + akÄ±ÅŸ (streaming) ile</td></tr>
+        <tr><td>UÃ§tan uca cevap sÃ¼resi</td><td class="num">8â€“20 sn (p50â€“p95)</td><td>Sorgu sÃ¼resi hariÃ§ deÄŸil, dahil</td></tr>
+        <tr><td>EÅŸzamanlÄ± kullanÄ±cÄ± (tek dÃ¼ÄŸÃ¼m)</td><td class="num">2â€“4 aktif Ã¼retim</td><td>Ã–nbellek isabetleri bunun Ã¼stÃ¼ne biner</td></tr>
+        <tr><td>Veri sÄ±zÄ±ntÄ±sÄ±</td><td class="num">SÄ±fÄ±r â€” mimari olarak</td><td>DÄ±ÅŸa Ã§Ä±kÄ±ÅŸ yolu yok; Â§9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box karar">
+    <div class="t">Karar Ã¶nerisi</div>
+    <p><strong>Onay verilsin</strong> â€” ancak Â§15'teki Faz 1 (8 haftalÄ±k kanÄ±tlama, tek konu alanÄ±, 25 soru) Ã§Ä±kÄ±ÅŸ kriterleri saÄŸlanmadan pilot geniÅŸletilmesin. Faz 1'in maliyeti, mevcut donanÄ±mla sÄ±nÄ±rlÄ± tutulabilir; asÄ±l donanÄ±m yatÄ±rÄ±mÄ± Faz 2'de yapÄ±lÄ±r. Bu, geri dÃ¶nÃ¼lemez harcamayÄ± Ã¶lÃ§Ã¼m sonrasÄ±na erteler.</p>
+  </div>
+</section>
+
+<section id="s1">
+  <div class="head"><span class="n">01</span><h2>AmaÃ§, kapsam, kapsam dÄ±ÅŸÄ±</h2></div>
+
+  <h3><span class="n">1.1</span>AmaÃ§</h3>
+  <p>Ãœst ve orta dÃ¼zey yÃ¶neticilerin, rapor talebi aÃ§madan ve analist beklemeden, kurumun onaylÄ± iÅŸ metriklerini kendi dilleriyle sorgulayabilmesi. Hedef, self-servis BI araÃ§larÄ±nÄ±n Ã¶ÄŸrenme eÄŸrisini ortadan kaldÄ±rmak ve "bu sayÄ± neden bÃ¶yle?" sorusunun cevabÄ±na dakikalar iÃ§inde ulaÅŸmaktÄ±r.</p>
+
+  <h3><span class="n">1.2</span>Kapsam iÃ§i</h3>
+  <ul>
+    <li>TÃ¼rkÃ§e (ve Ä°ngilizce) doÄŸal dil ile sorgu; takip sorularÄ±yla baÄŸlamÄ± koruyan diyalog.</li>
+    <li>Kurum iÃ§i veri ambarÄ±ndaki (DWH) yÄ±ldÄ±z ÅŸemalarÄ± ve mevcut semantik model Ã¼zerinden okuma.</li>
+    <li>ToplulaÅŸtÄ±rÄ±lmÄ±ÅŸ sonuÃ§larÄ±n tablo, temel grafik ve kÄ±sa metin yorumu olarak sunulmasÄ±.</li>
+    <li>DÃ¶nemsel karÅŸÄ±laÅŸtÄ±rma, trend, kÄ±rÄ±lÄ±m, sÄ±ralama, hedefâ€“gerÃ§ekleÅŸme, basit varyans aÃ§Ä±klamasÄ±.</li>
+    <li>KullanÄ±cÄ±nÄ±n yetkisi neyse o kadarÄ±nÄ± gÃ¶rmesi (satÄ±r ve kolon dÃ¼zeyi gÃ¼venlik).</li>
+    <li>Her cevabÄ±n izlenebilirliÄŸi: kullanÄ±lan metrik, filtre, Ã¼retilen sorgu, Ã§alÄ±ÅŸtÄ±rma zamanÄ±.</li>
+    <li>Tamamen Ã§evrimdÄ±ÅŸÄ± Ã§alÄ±ÅŸma: model aÄŸÄ±rlÄ±klarÄ±, kÃ¼tÃ¼phaneler ve Ã§alÄ±ÅŸma zamanÄ± kurum iÃ§inde.</li>
+  </ul>
+
+  <h3><span class="n">1.3</span>Kapsam dÄ±ÅŸÄ± (bu sÃ¼rÃ¼mde)</h3>
+  <ul>
+    <li><strong>Yazma iÅŸlemleri.</strong> Sistem hiÃ§bir koÅŸulda veri deÄŸiÅŸtirmez; baÄŸlantÄ± salt okunur kullanÄ±cÄ±yla aÃ§Ä±lÄ±r.</li>
+    <li><strong>Serbest metin dokÃ¼man arama.</strong> SÃ¶zleÅŸme, sunum, e-posta Ã¼zerinde RAG ayrÄ± bir projedir; CPU maliyeti profili tamamen farklÄ±dÄ±r.</li>
+    <li><strong>Tahmin ve senaryo modelleme.</strong> "Gelecek Ã§eyrek ne olur?" sorusu istatistiksel model gerektirir, LLM'in iÅŸi deÄŸildir.</li>
+    <li><strong>GerÃ§ek zamanlÄ± operasyonel veri.</strong> Kaynak, DWH tazeleme takvimine baÄŸlÄ±dÄ±r (tipik olarak T-1).</li>
+    <li><strong>Otonom eylem.</strong> Asistan e-posta gÃ¶ndermez, sistemde iÅŸlem baÅŸlatmaz.</li>
+    <li><strong>Model eÄŸitimi / ince ayar.</strong> Faz 3'e kadar yalnÄ±zca istem mÃ¼hendisliÄŸi ve retrieval; ince ayar Â§14.4'te deÄŸerlendirilir.</li>
+  </ul>
+
+  <div class="box">
+    <div class="t">Neden kapsam bu kadar sert Ã§iziliyor</div>
+    <p>Bu tÃ¼r projelerin baÅŸarÄ±sÄ±zlÄ±k nedeni model kalitesi deÄŸil, kapsam kaymasÄ±dÄ±r. "Her ÅŸeyi sorabildiÄŸiniz asistan" vaadi, ilk yanlÄ±ÅŸ cevapta gÃ¼veni kalÄ±cÄ± olarak yok eder. Dar ve doÄŸru bir asistan, geniÅŸ ve ÅŸÃ¼pheli bir asistandan kurumsal olarak daha deÄŸerlidir.</p>
+  </div>
+</section>
+
+<section id="s2">
+  <div class="head"><span class="n">02</span><h2>KullanÄ±cÄ±lar ve senaryolar</h2></div>
+
+  <h3><span class="n">2.1</span>KullanÄ±cÄ± profilleri</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Profil</th><th>KullanÄ±m ÅŸekli</th><th>Hacim beklentisi</th><th>Kritik ihtiyaÃ§</th></tr></thead>
+      <tbody>
+        <tr><td>Ãœst yÃ¶netim (CEO, CFO, GM)</td><td>GÃ¼nlÃ¼k 3â€“8 kÄ±sa soru, Ã§oÄŸu tekrar eden</td><td class="num">~20 kiÅŸi</td><td>HÄ±z, kesinlik, mobil eriÅŸim</td></tr>
+        <tr><td>DirektÃ¶r / bÃ¶lÃ¼m yÃ¶neticisi</td><td>KÄ±rÄ±lÄ±m ve karÅŸÄ±laÅŸtÄ±rma, gÃ¼nde 10â€“20 soru</td><td class="num">~80 kiÅŸi</td><td>KÄ±rÄ±lÄ±m derinliÄŸi, dÄ±ÅŸa aktarma</td></tr>
+        <tr><td>Ä°ÅŸ analisti</td><td>Hipotez testi, Ã¼retilen SQL'i inceleme</td><td class="num">~40 kiÅŸi</td><td>ÅžeffaflÄ±k, SQL'i alÄ±p geliÅŸtirebilme</td></tr>
+        <tr><td>Veri yÃ¶netiÅŸimi</td><td>Metrik tanÄ±mÄ± bakÄ±mÄ±, denetim kaydÄ± incelemesi</td><td class="num">~5 kiÅŸi</td><td>YÃ¶netim arayÃ¼zÃ¼, sÃ¼rÃ¼mleme</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Toplam ~145 lisanslÄ± kullanÄ±cÄ±, tepe saatte (09:00â€“10:00 ve pazartesi sabahÄ±) tahmini <strong>3â€“6 eÅŸzamanlÄ± aktif soru</strong>. Kapasite planÄ± Â§13 bu sayÄ±ya gÃ¶re kurulmuÅŸtur.</p>
+
+  <h3><span class="n">2.2</span>Ã–rnek sorular ve beklenen davranÄ±ÅŸ</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 02.1 â€” Bu tablo aynÄ± zamanda Faz 1 altÄ±n soru kÃ¼mesinin Ã§ekirdeÄŸidir; her satÄ±r test edilebilir bir kabul senaryosudur.</caption>
+      <thead><tr><th>Soru</th><th>SÄ±nÄ±f</th><th>Beklenen davranÄ±ÅŸ</th></tr></thead>
+      <tbody>
+        <tr><td>"Bu ayÄ±n cirosu geÃ§en yÄ±lÄ±n aynÄ± ayÄ±na gÃ¶re nasÄ±l?"</td><td><span class="pill acc">Basit</span></td><td>Tek metrik, YoY karÅŸÄ±laÅŸtÄ±rma, tek satÄ±r sonuÃ§ + yÃ¼zde deÄŸiÅŸim + tek cÃ¼mle yorum</td></tr>
+        <tr><td>"En Ã§ok bÃ¼yÃ¼yen 5 Ã¼rÃ¼n grubu hangileri?"</td><td><span class="pill acc">SÄ±ralama</span></td><td>Metrik + boyut + bÃ¼yÃ¼me hesabÄ± + Top-N; Ã¶lÃ§Ã¼t belirsizse (tutar mÄ± yÃ¼zde mi) netleÅŸtirme sorusu</td></tr>
+        <tr><td>"Marmara'da tahsilat performansÄ± dÃ¼ÅŸtÃ¼ mÃ¼?"</td><td><span class="pill mid">MuÄŸlak</span></td><td>"Tahsilat performansÄ±" iki onaylÄ± metriÄŸe eÅŸleÅŸiyor â†’ kullanÄ±cÄ±ya hangisini kastettiÄŸi sorulur</td></tr>
+        <tr><td>"Neden kÃ¢rlÄ±lÄ±k dÃ¼ÅŸtÃ¼?"</td><td><span class="pill mid">Nedensel</span></td><td>Nedensellik iddia edilmez. KÃ¢r kÄ±rÄ±lÄ±mÄ± (hacim / fiyat / maliyet / karma) hesaplanÄ±r, en bÃ¼yÃ¼k katkÄ± kalemleri gÃ¶sterilir, "olasÄ± etkenler" ifadesi kullanÄ±lÄ±r</td></tr>
+        <tr><td>"Ahmet YÄ±lmaz'Ä±n maaÅŸÄ± ne?"</td><td><span class="pill no">Yetkisiz</span></td><td>Yetki kontrolÃ¼ kesin reddeder; denetim kaydÄ±na yazÄ±lÄ±r; model bu veriyi hiÃ§ gÃ¶rmez</td></tr>
+        <tr><td>"Rakiplerin pazar payÄ± ne oldu?"</td><td><span class="pill no">Kapsam dÄ±ÅŸÄ±</span></td><td>Veri ambarÄ±nda yok â†’ net reddetme, tahmin yok</td></tr>
+        <tr><td>"AynÄ± grafiÄŸi bÃ¶lge kÄ±rÄ±lÄ±mÄ±yla gÃ¶ster"</td><td><span class="pill acc">Takip</span></td><td>Ã–nceki sorgu spesifikasyonu Ã¼zerine yalnÄ±zca boyut eklenir; sÄ±fÄ±rdan Ã¼retilmez</td></tr>
+        <tr><td>"Bunu her sabah 08:00'de bana gÃ¶nder"</td><td><span class="pill mid">Abonelik</span></td><td>Sorgu spesifikasyonu kaydedilir, zamanlanmÄ±ÅŸ brifing olarak kurulur (Faz 4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="head"><span class="n">03</span><h2>KÄ±sÄ±tlar ve varsayÄ±mlar</h2></div>
+
+  <h3><span class="n">3.1</span>Sert kÄ±sÄ±tlar</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>KÄ±sÄ±t</th><th>Mimari sonucu</th></tr></thead>
+      <tbody>
+        <tr><td class="id">K-01</td><td>HiÃ§bir veri (soru metni dahil) kurum aÄŸÄ± dÄ±ÅŸÄ±na Ã§Ä±kamaz</td><td>Bulut LLM API'si, telemetri, uzaktan model indirme, harici izleme SaaS'Ä± yok. Ã‡Ä±kÄ±ÅŸ trafiÄŸi gÃ¼venlik duvarÄ±nda varsayÄ±lan-ret.</td></tr>
+        <tr><td class="id">K-02</td><td>GPU yok, satÄ±n alÄ±nmayacak</td><td>Model seÃ§imi bellek bant geniÅŸliÄŸine gÃ¶re yapÄ±lÄ±r; MoE mimarileri Ã¶ne Ã§Ä±kar. BaÄŸlam uzunluÄŸu bir maliyet kalemidir.</td></tr>
+        <tr><td class="id">K-03</td><td>Mevcut DWH ve semantik model yeniden yazÄ±lmayacak</td><td>Sistem tÃ¼ketici olarak konumlanÄ±r; yalnÄ±zca ek metadata katmanÄ± Ã¼retilir.</td></tr>
+        <tr><td class="id">K-04</td><td>KVKK (6698) ve kurum iÃ§i veri sÄ±nÄ±flandÄ±rma politikasÄ± geÃ§erli</td><td>KiÅŸisel veri maskeleme, amaÃ§ sÄ±nÄ±rlamasÄ±, denetim kaydÄ± ve saklama sÃ¼resi zorunlu.</td></tr>
+        <tr><td class="id">K-05</td><td>Mevcut kimlik altyapÄ±sÄ± Active Directory</td><td>Kimlik doÄŸrulama Kerberos/OIDC; yetki, veri katmanÄ±ndaki RLS ile aynÄ± kaynaktan beslenir.</td></tr>
+        <tr><td class="id">K-06</td><td>Kurumsal onaylÄ± aÃ§Ä±k kaynak lisanslarÄ±</td><td>Model lisanslarÄ± hukuk onayÄ±ndan geÃ§er (Apache-2.0 tercih, Ã¶zel lisanslar incelenir).</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">3.2</span>VarsayÄ±mlar â€” doÄŸrulanmazsa plan deÄŸiÅŸir</h3>
+  <ul>
+    <li><strong>V-01.</strong> DWH iliÅŸkisel bir yÄ±ldÄ±z ÅŸemasÄ± sunuyor ve okuma replikasÄ± aÃ§Ä±labiliyor. <span class="pill mid">Faz 0'da doÄŸrulanacak</span></li>
+    <li><strong>V-02.</strong> Semantik model tablosal (Analysis Services / Power BI tÃ¼rÃ¼) ve XMLA benzeri programatik bir uÃ§ noktasÄ± var. Yoksa Â§7'deki B seÃ§eneÄŸi dÃ¼ÅŸer.</li>
+    <li><strong>V-03.</strong> En az 60 iÅŸ metriÄŸi iÃ§in yazÄ±lÄ±, Ã¼zerinde anlaÅŸÄ±lmÄ±ÅŸ tanÄ±m var ya da 8 hafta iÃ§inde Ã¼retilebilir. <em>Bu, projenin en kritik varsayÄ±mÄ±dÄ±r.</em></li>
+    <li><strong>V-04.</strong> Sunucularda AVX-512 destekli, tercihen AMX iÃ§eren gÃ¼ncel nesil sunucu iÅŸlemcisi mevcut ya da tedarik edilebilir.</li>
+    <li><strong>V-05.</strong> YÃ¶netici sorularÄ± bÃ¼yÃ¼k Ã¶lÃ§Ã¼de tekrar ediyor (uzun kuyruk sÄ±nÄ±rlÄ±) â€” Ã¶nbellek ve ÅŸablon stratejisi bu varsayÄ±ma dayanÄ±r.</li>
+  </ul>
+
+  <div class="box risk">
+    <div class="t">V-03 gerÃ§ekleÅŸmezse</div>
+    <p>Metrik tanÄ±mlarÄ± yoksa proje bir yapay zekÃ¢ projesi deÄŸil, bir veri yÃ¶netiÅŸimi projesidir ve Ã¶yle planlanmalÄ±dÄ±r. Bu durumda Faz 1'in kapsamÄ± "asistan kurmak"tan "tek konu alanÄ±nda 25 metriÄŸi onaylÄ± tanÄ±ma kavuÅŸturmak ve Ã¼zerine asistan koymak"a Ã§evrilir. SÄ±ra deÄŸiÅŸmez: tanÄ±m Ã¶nce gelir.</p>
+  </div>
+</section>
+
+<section id="s4">
+  <div class="head"><span class="n">04</span><h2>Mimari genel görünüm</h2></div>
+
+  <p class="lead">Sistem yedi katmandan oluşur ve tamamı kurum ağı içinde, internet çıkışı kapalı bir bölgede çalışır. Katmanlar arası tek kural şudur: <strong>ham veri yukarı doğru akmaz.</strong> Dil modeli hiçbir zaman satır düzeyinde veri görmez; yalnızca metadata ve toplulaştırılmış sonuç özeti görür.</p>
+
+  <div class="wide">
+    <div class="perimeter">
+      <div class="cap"><span>Kurum ağı · internet çıkışı yok</span><span>Tüm bileşenler şirket içi</span></div>
+      <div class="arch">
+        <div class="layer">
+          <div class="lb">L1 · Arayüz</div>
+          <div class="nodes">
+            <div class="node k">Sohbet arayüzü<small>web · SSO</small></div>
+            <div class="node">Teams / intranet eklentisi</div>
+            <div class="node">Mobil görünüm</div>
+            <div class="node">Excel / CSV dışa aktarma</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L2 · Orkestrasyon</div>
+          <div class="nodes">
+            <div class="node k">Ajan yöneticisi<small>durum makinesi</small></div>
+            <div class="node">Oturum &amp; diyalog belleği</div>
+            <div class="node">Bağlam derleyici</div>
+            <div class="node">Yanıt biçimlendirici</div>
+            <div class="node c">Kuyruk &amp; eşzamanlılık sınırı</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L3 · Zekâ</div>
+          <div class="nodes">
+            <div class="node k">Ana model<small>MoE · 4-bit · CPU</small></div>
+            <div class="node">Yönlendirici model<small>1–3B · niyet sınıfı</small></div>
+            <div class="node">Gömme modeli<small>çok dilli · TR</small></div>
+            <div class="node">Yeniden sıralayıcı<small>cross-encoder</small></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L4 · Anlam</div>
+          <div class="nodes">
+            <div class="node c">Metrik kaydı<small>onaylı tanımlar</small></div>
+            <div class="node">İş sözlüğü</div>
+            <div class="node">Türkçe eşanlamlı sözlüğü</div>
+            <div class="node">Boyut değer indeksi</div>
+            <div class="node">Sorgu şablon kütüphanesi</div>
+            <div class="node">Vektör indeksi<small>metadata · veri değil</small></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L5 · Yürütme</div>
+          <div class="nodes">
+            <div class="node c">Sorgu derleyici<small>JSON → SQL/DAX</small></div>
+            <div class="node c">Doğrulayıcı<small>izin listesi · limit</small></div>
+            <div class="node">Salt okunur bağlantı havuzu</div>
+            <div class="node">Sonuç önbelleği<small>yetkiye duyarlı</small></div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L6 · Veri</div>
+          <div class="nodes">
+            <div class="node">Veri ambarı<small>okuma replikası</small></div>
+            <div class="node">Semantik model<small>XMLA / tablosal</small></div>
+            <div class="node">Satır düzeyi güvenlik</div>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="lb">L7 · Platform</div>
+          <div class="nodes">
+            <div class="node">Konteyner platformu</div>
+            <div class="node">Model ağırlık deposu<small>iç kayıt defteri</small></div>
+            <div class="node">İzleme &amp; ölçüm</div>
+            <div class="node c">Denetim kaydı<small>değiştirilemez</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3><span class="n">4.1</span>Bir sorunun yaşam döngüsü</h3>
+  <ol class="flow">
+    <li><div class="w"><b>Kimlik ve yetki çözümlenir</b><span>Kullanıcı SSO ile gelir; dizin grupları oturuma bağlanır. Yetki bağlamı bu noktadan sonra her adımda taşınır — sonradan eklenmez.</span></div></li>
+    <li><div class="w"><b>Niyet sınıflandırılır</b><span>Küçük yönlendirici model soruyu sınıflar: metrik sorgusu, takip sorusu, tanım sorusu, kapsam dışı, yetkisiz. <em>~150 ms</em></span></div></li>
+    <li><div class="w"><b>Anlamsal eşleştirme yapılır</b><span>Sorudaki iş terimleri gömme araması ve eşanlamlı sözlüğü ile onaylı metrik ve boyutlara eşlenir. Eşleşme skoru düşükse netleştirme sorusu üretilir.</span></div></li>
+    <li><div class="w"><b>Bağlam derlenir</b><span>Yalnızca ilgili 5–12 metrik tanımı, ilgili boyutlar ve 2–3 benzer örnek istem içine konur. <em>Hedef: 3.000 token altı</em></span></div></li>
+    <li><div class="w"><b>Model sorgu spesifikasyonu üretir</b><span>Ana model, şema ile kısıtlanmış JSON çıktısı verir. Serbest metin değil, dilbilgisi ile zorlanmış yapı. <em>~200–400 token</em></span></div></li>
+    <li><div class="w"><b>Spesifikasyon doğrulanır</b><span>Metrik izin listesinde mi, boyut geçerli mi, dönem tanımlı mı, kullanıcı bu metriği görebiliyor mu? Başarısızsa modele tek sefer geri bildirimle dönülür.</span></div></li>
+    <li><div class="w"><b>Sorgu derlenir</b><span>Deterministik derleyici SQL veya DAX üretir; model üretilen sorguyu asla doğrudan yazmaz. Zorunlu satır limiti, zaman aşımı ve maliyet tavanı eklenir.</span></div></li>
+    <li><div class="w"><b>Sorgu çalıştırılır</b><span>Salt okunur bağlantı, kullanıcının kimliğiyle veya satır düzeyi güvenlik bağlamıyla. Ağır iş burada yapılır — CPU'da değil, veri ambarı motorunda.</span></div></li>
+    <li><div class="w"><b>Sonuç özetlenir</b><span>Yalnızca toplulaştırılmış sonuç (tipik olarak 100 satırın altında) modele döner ve 2–4 cümlelik yorum üretilir. Sayılar metinden değil, sonuç kümesinden basılır.</span></div></li>
+    <li><div class="w"><b>Cevap ve kanıt sunulur</b><span>Tablo, grafik, kullanılan metrik tanımı, filtreler, üretilen sorgu ve veri tazelik zamanı birlikte gösterilir. Tamamı denetim kaydına yazılır.</span></div></li>
+  </ol>
+
+  <div class="box">
+    <div class="t">Mimarinin özü</div>
+    <p>Dil modeli bu zincirde <strong>bir çevirmendir, bir hesap makinesi değil.</strong> Doğal dili yapılandırılmış sorgu niyetine çevirir; hesabı veri ambarı yapar, doğruluğu metrik kaydı garanti eder, sınırı yetki katmanı çizer. Model değiştirilebilir bir parçadır — 18 ay sonra daha iyi bir açık model çıktığında yalnızca L3 değişir, üstündeki hiçbir şey değişmez.</p>
+  </div>
+
+  <h3><span class="n">4.2</span>Neden bu ayrım kritik</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 04.1 — Aynı soru, iki mimari. Hızlandırıcısız bir ortamda fark, kabul edilebilirlik sınırının iki yakasına düşer.</caption>
+      <thead><tr><th>Ölçüt</th><th>Model veriyi okur (bağlama doldurma)</th><th>Model sorgu yazar (bu tasarım)</th></tr></thead>
+      <tbody>
+        <tr><td>Modele giden token</td><td class="num">20.000–60.000</td><td class="num">1.500–3.000</td></tr>
+        <tr><td>CPU'da ön-dolum süresi</td><td class="num">40–120 sn</td><td class="num">3–8 sn</td></tr>
+        <tr><td>Aritmetik doğruluk</td><td>Model toplama yapar — güvenilmez</td><td>Veri ambarı motoru hesaplar — kesin</td></tr>
+        <tr><td>Veri hacmi sınırı</td><td>Bağlam penceresi kadar</td><td>Pratikte sınırsız</td></tr>
+        <tr><td>Yetki uygulaması</td><td>Veri zaten bağlama girmiş — sızıntı riski</td><td>Sorgu düzeyinde, veri katmanında</td></tr>
+        <tr><td>İzlenebilirlik</td><td>"Model bu sayıyı nereden buldu?" belirsiz</td><td>Üretilen sorgu kanıttır</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="head"><span class="n">05</span><h2>CPU üzerinde LLM katmanı</h2></div>
+
+  <p class="lead">CPU çıkarımında darboğaz işlem gücü değil, <strong>bellek bant genişliğidir.</strong> Üretilen her token için modelin aktif ağırlıklarının tamamı bellekten okunur. Bu tek cümle, model seçiminden donanım listesine kadar bütün kararları belirler.</p>
+
+  <h3><span class="n">5.1</span>Basit hesap</h3>
+  <p>Yaklaşık üretim hızı, kullanılabilir bellek bant genişliğinin token başına okunması gereken aktif ağırlık hacmine bölümüdür. Yoğun (dense) bir modelde aktif ağırlık modelin tamamıdır; uzman karışımı (MoE) bir modelde ise yalnızca seçilen uzmanlar okunur. Fark, pratikte üç ilâ beş kat hızdır.</p>
+
+  <div class="wide">
+<pre><i># Kaba tavan hesabı — çift soketli, çok kanallı DDR5 sunucu</i>
+Ölçülen gerçekçi bant genişliği   ~ 320 GB/sn   <i>(teorik ~460, verim ~%70)</i>
+Verimlilik katsayısı              ~ 0,65        <i>(çekirdek ölçekleme kaybı)</i>
+
+<b>Yoğun 32B model, 4-bit</b>        aktif ağırlık ~ 18 GB
+   320 x 0,65 / 18                 <b>= yaklaşık 11 token/sn</b>
+
+<b>MoE 100B / 12B aktif, 4-bit</b>    aktif ağırlık ~ 7 GB
+   320 x 0,65 / 7                  <b>= yaklaşık 30 token/sn</b>
+
+<i># 300 token'lık bir sorgu spesifikasyonu için:</i>
+   yoğun 32B   -&gt;  ~27 sn   <i>kabul edilemez</i>
+   MoE         -&gt;  ~10 sn   <i>+ ön-dolum ~3 sn = ~13 sn</i>
+</pre>
+  </div>
+  <p>Bu yüzden mimari <strong>üretilen token sayısını en aza indirmek</strong> üzerine kuruludur: model uzun açıklama değil, kısa ve yapılandırılmış çıktı üretir. Nihai kullanıcı metni de kısadır (2–4 cümle) ve akış hâlinde gösterilir, böylece algılanan gecikme gerçek gecikmenin altında kalır.</p>
+
+  <h3><span class="n">5.2</span>Model kademeleri</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 05.1 — Üç ayrı model, üç ayrı iş. Tek büyük modelle her işi yapmak CPU'da savurganlıktır.</caption>
+      <thead><tr><th>Kademe</th><th>Boyut / tip</th><th>Görev</th><th>Gecikme bütçesi</th><th>Bellek</th></tr></thead>
+      <tbody>
+        <tr><td>Yönlendirici</td><td class="num">1–3B yoğun, 4-bit</td><td>Niyet sınıflama, kapsam dışı tespiti, netleştirme kararı</td><td class="num">400 ms altı</td><td class="num">~2 GB</td></tr>
+        <tr><td>Ana akıl yürütücü</td><td class="num">MoE, ~100B toplam / 10–15B aktif, 4-bit</td><td>Sorgu spesifikasyonu üretimi, sonuç yorumu</td><td class="num">3–12 sn</td><td class="num">55–70 GB</td></tr>
+        <tr><td>Gömme</td><td class="num">300M–1B, çok dilli</td><td>Metrik ve terim eşleştirme, şablon getirme</td><td class="num">100 ms altı</td><td class="num">~1 GB</td></tr>
+        <tr><td>Yeniden sıralayıcı</td><td class="num">100–300M cross-encoder</td><td>İlk 30 adayı 8'e indirme</td><td class="num">250 ms altı</td><td class="num">~0,5 GB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">5.3</span>Model seçim ölçütleri</h3>
+  <p>Somut model adı bu dokümanda <em>bilinçli olarak</em> sabitlenmemiştir; açık ağırlıklı model alanı altı ayda bir yeniden diziliyor ve bir spesifikasyonun ömrü bundan uzundur. Bunun yerine seçim ölçütleri sabitlenir, Faz 0'da §10'daki altın soru kümesiyle üç aday ölçülür ve kazanan kayda geçer:</p>
+  <ul>
+    <li><strong>Mimari:</strong> Uzman karışımı, aktif parametre 15B veya altı. CPU'da pazarlık edilemez tek ölçüt budur.</li>
+    <li><strong>Türkçe yeterlik:</strong> Türkçe soruyu doğru <em>anlama</em>. Çıktının Türkçe olması gerekmez (çıktı JSON'dur), ama anlama kalitesi doğrudan doğruluğa yansır.</li>
+    <li><strong>Yapılandırılmış çıktı disiplini:</strong> Dilbilgisi kısıtı altında (JSON şeması / GBNF) bozulmadan üretebilmesi.</li>
+    <li><strong>Araç çağırma yeteneği:</strong> Ajan döngüsü için eğitim sırasında araç kullanımı görmüş olması.</li>
+    <li><strong>Lisans:</strong> Ticari kullanıma açık, tercihen Apache-2.0; hukuk onayından geçebilir olması.</li>
+    <li><strong>Nicemleme dayanıklılığı:</strong> 4-bit ağırlıkta kalite kaybının ölçülmüş ve kabul edilebilir olması.</li>
+  </ul>
+
+  <h3><span class="n">5.4</span>Çıkarım çalışma zamanı kararları</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Konu</th><th>Seçim</th><th>Gerekçe</th></tr></thead>
+      <tbody>
+        <tr><td>Nicemleme</td><td>Ağırlık 4-bit, KV önbelleği 8-bit</td><td>Bellekten okunan hacmi yaklaşık dörtte bire düşürür; kısıtlı JSON üretiminde kalite kaybı ihmal edilebilir</td></tr>
+        <tr><td>İş parçacığı</td><td>Fiziksel çekirdek sayısı kadar, eşzamanlı çoklu iş parçacığı kapalı</td><td>Bant genişliğine doygun iş yükünde mantıksal çekirdek fayda getirmez, gecikme varyansını artırır</td></tr>
+        <tr><td>NUMA</td><td>Soket başına bir çıkarım işlemi, bellek yerelliği sabitlenmiş</td><td>Soketler arası bellek erişimi üretim hızını yarıya kadar düşürür</td></tr>
+        <tr><td>Bağlam</td><td>Sabit 8K tavan, tipik kullanım 2–3K</td><td>Bağlam uzunluğu CPU'da doğrudan gecikmedir; uzun bağlam bir maliyet kalemidir</td></tr>
+        <tr><td>Eşzamanlılık</td><td>Düğüm başına iki çıkarım yuvası, üstü kuyrukta</td><td>Üçüncü eşzamanlı istek, diğer ikisinin gecikmesini de kabul edilemez hâle getirir</td></tr>
+        <tr><td>Dilbilgisi kısıtı</td><td>Zorunlu — JSON şeması üretim sırasında dayatılır</td><td>Geçersiz çıktı yeniden deneme demektir; CPU'da yeniden deneme en pahalı hatadır</td></tr>
+        <tr><td>Ön-dolum önbelleği</td><td>Sistem istemi ve metrik sözlüğü için KV önbelleği kalıcı tutulur</td><td>Her isteğin sabit önekini yeniden işlemek istek başına 2–4 sn israftır</td></tr>
+        <tr><td>Toplu işleme</td><td>Sürekli toplu işleme açık, ancak yuva sayısıyla sınırlı</td><td>Boşta kalan bellek bant genişliğini ikinci isteğe verir; tek kullanıcıda etkisizdir</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box karar">
+    <div class="t">Karar D-05</div>
+    <p>Ana model <strong>uzman karışımı mimaride ve 4-bit nicemlenmiş</strong> olacaktır. Ölçülen üretim hızı saniyede 15 token'ın altında kalan yoğun modeller CPU dağıtımında aday listesine alınmaz. Bu ölçüm Faz 0'ın ilk çıktısıdır; kâğıt üzerindeki değerlere değil, kurumun kendi donanımında alınan sayıya güvenilir.</p>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="head"><span class="n">06</span><h2>Anlam sözleşmesi</h2></div>
+
+  <p class="lead">Bu bölüm dokümanın kalbidir. Sistemin doğruluğu modelin zekâsından değil, <strong>modele verilen anlam sözleşmesinin kalitesinden</strong> gelir. "Ciro" kelimesinin tam olarak neye karşılık geldiği yazılı değilse, hiçbir model bunu doğru bilemez — yalnızca ikna edici biçimde tahmin eder ki bu daha kötüdür.</p>
+
+  <h3><span class="n">6.1</span>Dört metadata varlığı</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Varlık</th><th>İçerik</th><th>Sahibi</th><th>Faz 1 hedefi</th></tr></thead>
+      <tbody>
+        <tr><td class="id">M-1</td><td><strong>Metrik kaydı.</strong> Onaylı iş metriklerinin adı, tanımı, hesabı, birimi, tazelik ve sahibi</td><td>Veri yönetişimi + iş birimi</td><td class="num">25 metrik</td></tr>
+        <tr><td class="id">M-2</td><td><strong>Boyut ve hiyerarşi kataloğu.</strong> Kırılım eksenleri, geçerli seviyeler, hangi metrikle birleşebildiği</td><td>Veri platformu</td><td class="num">12 boyut</td></tr>
+        <tr><td class="id">M-3</td><td><strong>Türkçe eşanlamlı sözlüğü.</strong> Konuşma dilindeki karşılıklar, kısaltmalar, yaygın yanlış yazımlar</td><td>İş analisti + kullanım verisi</td><td class="num">metrik başına 5–15</td></tr>
+        <tr><td class="id">M-4</td><td><strong>Boyut değer indeksi.</strong> Bölge, ürün grubu, kanal gibi düşük kardinaliteli değerlerin gerçek yazımları</td><td>Otomatik üretim, günlük tazeleme</td><td class="num">50 bin değere kadar</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">6.2</span>Metrik kaydı — bir kayıt nasıl görünür</h3>
+  <div class="wide">
+<pre>metrik: net_ciro
+  ad_tr:        "Net Ciro"
+  esanlamlilar: [ciro, net satış, hasılat, satış geliri, gelir, turnover]
+  tanim_tr:     "İade ve iskontolar düşülmüş, KDV hariç satış tutarı."
+  hesap:        SUM(fact_satis.net_tutar)
+  para_birimi:  TRY            <i># yabancı para satırları kur tablosu ile çevrilir</i>
+  granularite:  gun
+  <b>izinli_boyutlar</b>:  [tarih, bolge, urun_grubu, kanal, musteri_segmenti]
+  <b>yasakli_boyutlar</b>: [musteri_adi, personel]   <i># mahremiyet ve anlam kaymasi</i>
+  tazelik:      "T-1, her sabah 06:00"
+  sahibi:       "Finans · Gelir Muhasebesi"
+  onay:         { durum: onayli, tarih: 2026-06-14, surum: 3 }
+  <b>karistirilmamali</b>:
+    - brut_ciro     <i># iade dusulmemis, aradaki fark tipik %3-6</i>
+    - siparis_tutari <i># henuz faturalasmamis</i>
+  ornek_sorular:
+    - "bu ay ciromuz ne kadar"
+    - "geçen yıla göre satışlar nasıl"
+</pre>
+  </div>
+  <p>Buradaki <code>karistirilmamali</code> alanı, gerçek kurumsal hataların çoğunu tek başına önler: model "ciro" duyduğunda brüt mü net mi olduğunu tahmin etmez, kayıt hangisinin onaylı olduğunu söyler ve fark önemliyse kullanıcıya sorar.</p>
+
+  <h3><span class="n">6.3</span>Eşleştirme nasıl çalışır</h3>
+  <ol class="flow">
+    <li><div class="w"><b>Sözlük eşleşmesi</b><span>Sorudaki terimler eşanlamlı sözlüğünde birebir aranır. En hızlı ve en güvenilir yol; kapsanan sorularda model devreye bile girmez.</span></div></li>
+    <li><div class="w"><b>Anlamsal arama</b><span>Birebir eşleşme yoksa metrik tanımları ve örnek sorular üzerinde gömme araması yapılır. <em>ilk 30 aday</em></span></div></li>
+    <li><div class="w"><b>Yeniden sıralama</b><span>Cross-encoder adayları soruya göre yeniden sıralar; ilk 8 aday bağlama girer. Fazlası modeli yanıltır, azı kapsam kaybettirir.</span></div></li>
+    <li><div class="w"><b>Belirsizlik kontrolü</b><span>İlk iki adayın skoru birbirine yakınsa (eşik: %15 fark altı) model seçmez — kullanıcıya iki seçenek sunulur. <em>"Tahsilat performansı" örneği</em></span></div></li>
+  </ol>
+
+  <div class="box karar">
+    <div class="t">Karar D-06</div>
+    <p>Metrik kaydı <strong>tek doğruluk kaynağıdır</strong> ve sürüm kontrolü altında, onay akışıyla yönetilir. Kayıtta olmayan bir metrik sorgulanamaz; asistan bunu bir eksiklik olarak değil, tasarım olarak bildirir: <em>"Bu metrik onaylı tanım listesinde yok."</em> Yeni metrik talebi, veri yönetişimi kuyruğuna düşen izlenebilir bir taleptir.</p>
+  </div>
+
+  <h3><span class="n">6.4</span>Yönetişim yükü — açıkça söylenmesi gereken</h3>
+  <p>Metrik kaydını kurmak ve canlı tutmak <strong>sürekli bir iştir, tek seferlik bir görev değildir.</strong> Faz 1 için 25 metriğin tanımlanması, iş birimlerinden onay alınması ve doğrulanması gerçekçi olarak 4–6 hafta ve yaklaşık 0,5 tam zamanlı kişi demektir. Üretim döneminde metrik başına yılda 1–2 saatlik bakım (tanım değişikliği, kaynak değişimi, yeni eşanlamlı) beklenmelidir. Bu maliyet §16'daki ekip planına dahildir; gizlenmesi projenin gerçekçiliğini bozar.</p>
+</section>
+
+<section id="s7">
+  <div class="head"><span class="n">07</span><h2>Sorgu üretim stratejisi</h2></div>
+
+  <p class="lead">Doğal dilden veriye giden üç yol vardır ve seçim, projenin risk profilini baştan belirler. Kısaca: <strong>modele ne kadar özgürlük verirseniz, doğruluğu o kadar denetlenemez hâle gelir.</strong></p>
+
+  <h3><span class="n">7.1</span>Üç seçenek</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 07.1 — Seçenek karşılaştırması. Değerlendirme, hızlandırıcısız ve sıfır sızıntı toleranslı bir ortam varsayımıyla yapılmıştır.</caption>
+      <thead><tr><th>Ölçüt</th><th>A · Kısıtlı sorgu spesifikasyonu</th><th>B · Semantik model üzerinden</th><th>C · Serbest SQL üretimi</th></tr></thead>
+      <tbody>
+        <tr><td>Model çıktısı</td><td>Şema ile kısıtlı JSON</td><td>Ölçü + boyut seçimi</td><td>Ham SQL metni</td></tr>
+        <tr><td>Doğruluk (kapsam içi)</td><td><span class="pill ok">%85–92</span></td><td><span class="pill ok">%88–94</span></td><td><span class="pill no">%55–70</span></td></tr>
+        <tr><td>Yanlış ama makul görünen cevap</td><td>Düşük</td><td>Çok düşük</td><td><span class="pill no">Yüksek — en büyük risk</span></td></tr>
+        <tr><td>Üretilen token</td><td class="num">200–400</td><td class="num">150–300</td><td class="num">400–900</td></tr>
+        <tr><td>CPU maliyeti</td><td><span class="pill ok">Düşük</span></td><td><span class="pill ok">En düşük</span></td><td><span class="pill no">2–3 kat</span></td></tr>
+        <tr><td>Güvenlik yüzeyi</td><td>Derleyici kapatır</td><td>Model motoru kapatır</td><td><span class="pill no">Ayrıştırıcı ile savunma gerekir</span></td></tr>
+        <tr><td>Kapsam esnekliği</td><td>Orta — kayıtla sınırlı</td><td>Dar — modelde ne varsa</td><td><span class="pill mid">Geniş</span></td></tr>
+        <tr><td>Ön koşul</td><td>Metrik kaydı (M-1)</td><td>Olgun semantik model (V-02)</td><td>Yok</td></tr>
+        <tr><td>Kurulum eforu</td><td>Orta</td><td>Düşük (model varsa)</td><td>Düşük</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box karar">
+    <div class="t">Karar D-07 — hibrit, sıralı</div>
+    <p><strong>Birincil yol A</strong>, semantik model olgunsa <strong>B tercih edilir</strong> (ölçü tanımları zaten orada onaylıdır ve satır düzeyi güvenlik motorda uygulanır). <strong>C üretime alınmaz.</strong> Serbest SQL yalnızca iş analisti profilindeki kullanıcılara, "taslak" etiketiyle, sonucu asla otomatik yorumlanmadan sunulabilir — bir kolaylık aracı olarak, cevap kaynağı olarak değil.</p>
+  </div>
+
+  <h3><span class="n">7.2</span>Sorgu spesifikasyonu</h3>
+  <p>Modelin ürettiği tek şey aşağıdaki yapıdır. Serbest metin alanı yoktur; her alanın değeri ya sabit listeden ya metrik kaydından gelir. Bu, doğrulamayı bir şema kontrolüne indirger.</p>
+  <div class="wide">
+<pre><i># "En çok büyüyen 5 ürün grubu hangileri?" sorusunun çıktısı</i>
+{
+  "<b>metrikler</b>":  ["net_ciro"],
+  "<b>boyutlar</b>":   ["urun_grubu"],
+  "<b>donem</b>":      { "tip": "ceyrek", "deger": "2026-Q2" },
+  "<b>karsilastirma</b>": { "tip": "onceki_yil_ayni_donem" },
+  "<b>filtreler</b>":  [],
+  "<b>siralama</b>":   { "olcut": "buyume_yuzde", "yon": "azalan" },
+  "<b>limit</b>":      5,
+  "<b>guven</b>":      0.83,
+  "<b>belirsizlikler</b>": [
+     "buyume tutar mi yuzde mi — yuzde varsayildi"
+  ]
+}
+</pre>
+  </div>
+  <p><code>guven</code> ve <code>belirsizlikler</code> alanları arayüzde doğrudan kullanılır: güven eşiğin altındaysa cevap yerine netleştirme sorusu gösterilir, belirsizlik varsa cevabın üstünde tek satırlık bir not olarak çıkar. Modelden kendi kesinliğini raporlamasını istemek mükemmel değildir, ama denetlenebilir bir sinyaldir ve §10'da kalibre edilir.</p>
+
+  <h3><span class="n">7.3</span>Derleyici ve doğrulayıcı</h3>
+  <ul>
+    <li><strong>İzin listesi zorunlu.</strong> Metrik, boyut ve filtre alanları yalnızca kayıtta tanımlı adlardan seçilebilir. Tanımsız ad, sorguyu derleme aşamasında düşürür.</li>
+    <li><strong>Birleşim yolları önceden tanımlı.</strong> Model tablo birleştirmez; hangi olgu tablosunun hangi boyutla nasıl birleşeceği şemadan bilinir.</li>
+    <li><strong>Zorunlu sınırlar.</strong> Her sorguya satır limiti, sorgu zaman aşımı (varsayılan 30 sn) ve tarama maliyeti tavanı eklenir.</li>
+    <li><strong>Salt okunur oturum.</strong> Bağlantı kullanıcısının yazma yetkisi yoktur; ayrıca üretilen ifade türü <code>SELECT</code> ile sınırlıdır.</li>
+    <li><strong>Tek geri bildirim turu.</strong> Doğrulama başarısızsa hata mesajı modele bir kez verilir. İkinci başarısızlıkta cevap üretilmez, kullanıcıya soruyu daraltması önerilir — sonsuz deneme CPU'yu tüketir.</li>
+  </ul>
+
+  <h3><span class="n">7.4</span>Şablon kütüphanesi ve önbellek</h3>
+  <p>Yönetici soruları büyük ölçüde tekrar eder (V-05). Bu, hızlandırıcısız bir ortamda avantaja çevrilir:</p>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 07.2 — Önbellek anahtarları <strong>her zaman</strong> kullanıcının yetki bağlamını içerir. Yetkiden bağımsız önbellek, doğrudan bir yetki aşımı açığıdır.</caption>
+      <thead><tr><th>Katman</th><th>Neyi saklar</th><th>Geçerlilik</th><th>Beklenen isabet</th></tr></thead>
+      <tbody>
+        <tr><td>Tam eşleşme önbelleği</td><td>Normalize soru metni → cevap</td><td>Veri tazelenene kadar</td><td class="num">%15–25</td></tr>
+        <tr><td>Spesifikasyon önbelleği</td><td>Soru gömmesi → sorgu spesifikasyonu</td><td>Metrik kaydı sürümü değişene kadar</td><td class="num">%20–30</td></tr>
+        <tr><td>Şablon eşleşmesi</td><td>Parametreli kalıplar (metrik + dönem + kırılım)</td><td>Kalıcı</td><td class="num">%25–35</td></tr>
+        <tr><td>Sonuç önbelleği</td><td>Sorgu imzası + yetki bağlamı → sonuç kümesi</td><td>Tazeleme takvimi</td><td class="num">%30–40</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Toplamda soruların yaklaşık yarısının modele hiç uğramadan ya da yalnızca yorum aşamasında uğrayarak cevaplanması hedeflenir. Bu, tek düğümlü bir CPU kurulumunun 145 kullanıcıyı taşıyabilmesinin başlıca nedenidir.</p>
+</section>
+
+<section id="s8">
+  <div class="head"><span class="n">08</span><h2>Ajan mimarisi</h2></div>
+
+  <p class="lead">"Ajan" burada özerk bir varlık değil, <strong>sınırları çizilmiş bir durum makinesidir.</strong> Serbestçe düşünen, kendi kendine araç zinciri kuran bir tasarım; hızlandırıcısız ortamda hem gecikme hem denetlenebilirlik açısından karşılanamaz.</p>
+
+  <h3><span class="n">8.1</span>Durumlar ve geçişler</h3>
+  <div class="wide">
+<pre>  ANLA ──► ESLESTIR ──► PLANLA ──► DOGRULA ──► CALISTIR ──► YORUMLA ──► SUN
+    │           │           │           │            │
+    │           │           │           └─(1 kez)────┘   <i>tek düzeltme turu</i>
+    │           │           └──────► <b>NETLESTIR</b> ──► (kullaniciya soru)
+    │           └──────────────────► <b>KAPSAM_DISI</b> ──► (gerekcelı ret)
+    └──────────────────────────────► <b>YETKISIZ</b> ──► (ret + denetim kaydi)
+
+  <i>Sert sınırlar: en fazla 6 durum geçişi · en fazla 2 sorgu çalıştırma
+  · toplam 45 sn bütçe · aşılırsa kısmi sonuç + açıklama ile sonlandır</i>
+</pre>
+  </div>
+
+  <h3><span class="n">8.2</span>Ajanın araçları</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 08.1 — Araç listesi kapalıdır. Yazan, gönderen, dışarı çağrı yapan hiçbir araç yoktur; bu, §09'daki sızıntı savunmasının ilk halkasıdır.</caption>
+      <thead><tr><th>Araç</th><th>Ne yapar</th><th>Yan etki</th><th>Çağrı sınırı</th></tr></thead>
+      <tbody>
+        <tr><td class="id">metrik_ara</td><td>Anlamsal arama ile aday metrik ve boyutları döner</td><td>Yok</td><td class="num">3</td></tr>
+        <tr><td class="id">tanim_getir</td><td>Bir metriğin onaylı tanımını ve sahibini döner</td><td>Yok</td><td class="num">5</td></tr>
+        <tr><td class="id">boyut_degeri_ara</td><td>"marmara" gibi bir ifadeyi geçerli boyut değerine eşler</td><td>Yok</td><td class="num">5</td></tr>
+        <tr><td class="id">sorgu_calistir</td><td>Doğrulanmış spesifikasyonu derleyip çalıştırır</td><td><span class="pill mid">Okuma · denetlenir</span></td><td class="num">2</td></tr>
+        <tr><td class="id">tazelik_sor</td><td>İlgili tablonun son yüklenme zamanını döner</td><td>Yok</td><td class="num">2</td></tr>
+        <tr><td class="id">netlestirme_sor</td><td>Kullanıcıya seçenekli soru sorar ve döngüyü duraklatır</td><td>Kullanıcıya görünür</td><td class="num">1</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">8.3</span>Tek ajan mı, çok ajan mı</h3>
+  <p>Yaygın eğilim her adıma bir uzman ajan koymaktır. Hızlandırıcısız bir ortamda bu <strong>doğrudan yanlış karardır:</strong> her ajan devri yeni bir ön-dolum ve yeni bir üretim turu demektir; beş ajanlı bir tasarım aynı cevabı 4–6 kat gecikmeyle üretir. Bu spesifikasyon <strong>tek akıl yürütücü + deterministik yardımcılar</strong> modelini benimser: ne kadar iş kodla yapılabiliyorsa modele verilmez.</p>
+  <div class="cards">
+    <div class="card">
+      <div class="h">Modele bırakılan</div>
+      <p>Niyet çıkarımı, terim eşleştirmede belirsizlik çözümü, sorgu spesifikasyonu üretimi, sonucun 2–4 cümlelik iş diliyle yorumu.</p>
+    </div>
+    <div class="card">
+      <div class="h">Koda bırakılan</div>
+      <p>Dönem çözümleme ("geçen çeyrek" → tarih aralığı), birim ve para birimi çevrimi, yüzde ve büyüme hesapları, sıralama, biçimlendirme, yetki kontrolü, önbellek.</p>
+    </div>
+    <div class="card">
+      <div class="h">Asla modele bırakılmayan</div>
+      <p>Aritmetik, yetki kararı, veri tazeliği beyanı, metrik tanımının kendisi, kaynak sistem seçimi. Bunların hepsi doğrulanabilir kaynaklardan okunur.</p>
+    </div>
+  </div>
+
+  <h3><span class="n">8.4</span>Diyalog belleği</h3>
+  <p>Takip soruları ("aynısını bölge kırılımıyla göster") tam metin geçmişiyle değil, <strong>son sorgu spesifikasyonunun kendisiyle</strong> taşınır. Bellekte tutulan şey konuşma değil, yapıdır: son spesifikasyon, son sonuç özeti (en fazla 20 satır) ve çözülmüş varlıklar. Bu sayede bağlam uzunluğu diyalog boyunca sabit kalır — CPU'da büyüyen bağlam, büyüyen gecikme demektir. Oturum belleği 30 dakika hareketsizlikte düşer ve şifreli olarak saklanır.</p>
+</section>
+
+<section id="s9">
+  <div class="head"><span class="n">09</span><h2>Güvenlik ve yetkilendirme</h2></div>
+
+  <p class="lead">Bu projenin varlık nedeni verinin kurumdan çıkmamasıdır. Dolayısıyla güvenlik bir ek özellik değil, <strong>mimarinin kendisidir.</strong> Aşağıdaki savunma katmanları birbirinin yedeğidir; herhangi birinin tek başına yeterli olduğu varsayılmaz.</p>
+
+  <h3><span class="n">9.1</span>Tehdit modeli</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Tehdit</th><th>Savunma</th><th>Artık risk</th></tr></thead>
+      <tbody>
+        <tr><td class="id">T-01</td><td>Verinin kurum dışına çıkması</td><td>Çıkış trafiğinde varsayılan-ret; model ağırlıkları iç kayıt defterinden; telemetri kapalı; konteynerlerde dış DNS yok</td><td><span class="pill ok">Çok düşük</span></td></tr>
+        <tr><td class="id">T-02</td><td>Kullanıcının yetkisi olmayan veriyi görmesi</td><td>Yetki veri katmanında (satır düzeyi güvenlik) uygulanır; asistan ayrı bir yetki kaynağı tutmaz; önbellek anahtarı yetki bağlamını içerir</td><td><span class="pill ok">Düşük</span></td></tr>
+        <tr><td class="id">T-03</td><td>İstem enjeksiyonu ile sınırların aşılması</td><td>Model yalnızca kapalı araç listesine erişir; çıktı şema ile kısıtlıdır; yetki kararı modelin erişemediği katmandadır</td><td><span class="pill mid">Düşük–orta</span></td></tr>
+        <tr><td class="id">T-04</td><td>Metadata üzerinden bilgi sızması</td><td>Metrik kaydı ve boyut değer indeksi de yetkiye tabidir; kullanıcı görmeye yetkili olmadığı metriğin varlığını bile öğrenmez</td><td><span class="pill mid">Orta</span></td></tr>
+        <tr><td class="id">T-05</td><td>Toplulaştırma üzerinden birey çıkarımı</td><td>Asgari hücre büyüklüğü kuralı (n &lt; 5 ise sonuç maskelenir); kişisel boyutlar metrik kaydında yasaklı listede</td><td><span class="pill mid">Orta</span></td></tr>
+        <tr><td class="id">T-06</td><td>Kaynak tüketimiyle hizmet engelleme</td><td>Kullanıcı başına hız sınırı; sorgu maliyet tavanı; çıkarım kuyruğunda adil paylaşım</td><td><span class="pill ok">Düşük</span></td></tr>
+        <tr><td class="id">T-07</td><td>Model ağırlığının veya istem şablonunun kurcalanması</td><td>Ağırlık dosyalarında karma doğrulaması; istemler sürüm kontrolünde ve imzalı; üretime dağıtım onay akışıyla</td><td><span class="pill ok">Düşük</span></td></tr>
+        <tr><td class="id">T-08</td><td>Yanlış cevabın doğru sanılması</td><td>Her cevapta kaynak, tanım ve sorgu görünür; güven eşiği altında cevap verilmez; §10 sürekli ölçüm</td><td><span class="pill mid">Orta — kalıcı</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box risk">
+    <div class="t">Kalan en büyük risk T-08'dir</div>
+    <p>Teknik sızıntı riskleri mimariyle kapatılabilir. Kapatılamayan risk, sistemin <em>ikna edici biçimde yanlış</em> bir cevap vermesi ve bu cevaba dayanarak karar alınmasıdır. Bunun panzehiri daha büyük model değil, §10'daki ölçüm disiplini, §11'deki şeffaf sunum ve dar kapsamdır.</p>
+  </div>
+
+  <h3><span class="n">9.2</span>Yetkilendirme mimarisi</h3>
+  <ul>
+    <li><strong>Tek yetki kaynağı.</strong> Asistan kendi yetki tablosunu tutmaz. Kullanıcının kimliği veri katmanına taşınır; hangi satırı göreceğine veri ambarı ya da semantik model karar verir. Böylece BI araçlarıyla asistan arasında yetki farkı oluşamaz.</li>
+    <li><strong>Kimliğe bürünme değil, kimlik taşıma.</strong> Bağlantı mümkünse kullanıcının kendi kimliğiyle açılır; teknik olarak mümkün değilse hizmet hesabı + doğrulanmış yetki bağlamı kullanılır ve bu bağlam denetim kaydına yazılır.</li>
+    <li><strong>Metadata da yetkilidir.</strong> Metrik kaydı ve boyut değerleri kullanıcı rolüne göre filtrelenir; aksi hâlde "İK maaş metriği" adının varlığı bile bir bilgi sızıntısıdır (T-04).</li>
+    <li><strong>Kolon düzeyi maskeleme.</strong> Kişisel veri içeren kolonlar asistan yoluyla hiçbir koşulda ham gelmez; yalnızca toplulaştırılmış biçimde ve asgari hücre kuralıyla.</li>
+    <li><strong>Önbellek yetki duyarlı.</strong> Anahtar = sorgu imzası + yetki bağlamı özeti. Bu kural ihlal edilirse önbellek doğrudan bir açığa dönüşür.</li>
+  </ul>
+
+  <h3><span class="n">9.3</span>Ağ ve dağıtım izolasyonu</h3>
+  <div class="wide">
+<pre><b>Bölge</b>              <b>Giriş</b>                          <b>Çıkış</b>
+kullanici_agi       —                              → uygulama (443, SSO)
+uygulama_bolgesi    kullanici_agi (443)            → zeka_bolgesi, veri_bolgesi
+zeka_bolgesi        uygulama_bolgesi (dahili)      <i>YOK — internet erişimi kapalı</i>
+veri_bolgesi        uygulama_bolgesi (salt okunur) <i>YOK</i>
+yonetim_bolgesi     yonetici_atlama_sunucusu       → ic_kayit_defteri
+
+<i># Model ağırlıkları ve kütüphaneler dış ağdan indirilmez.
+# Güncelleme yolu: onaylı paket → iç kayıt defteri → imza doğrulama → dağıtım.</i>
+</pre>
+  </div>
+
+  <h3><span class="n">9.4</span>KVKK ve denetlenebilirlik</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Gereklilik</th><th>Uygulama</th></tr></thead>
+      <tbody>
+        <tr><td>Amaç sınırlaması</td><td>Sistem yalnızca onaylı metrik kapsamında çalışır; kapsam genişlemesi yönetişim onayına tabidir</td></tr>
+        <tr><td>Veri minimizasyonu</td><td>Modele ham satır gitmez; yalnızca toplulaştırılmış sonuç ve metadata</td></tr>
+        <tr><td>Denetim kaydı</td><td>Soru metni, kullanıcı, çözümlenen metrikler, üretilen sorgu, dönen satır sayısı, süre, sonuç durumu — değiştirilemez depoda</td></tr>
+        <tr><td>Saklama</td><td>Denetim kaydı 24 ay; soru metinleri 12 ay sonra kimliksizleştirilir; oturum belleği 30 dakika</td></tr>
+        <tr><td>Aydınlatma</td><td>İlk girişte kullanım bildirimi; soruların kalite iyileştirme için saklandığı açıkça belirtilir</td></tr>
+        <tr><td>Erişim talebi</td><td>Kullanıcı kendi soru geçmişini görebilir ve silinmesini talep edebilir</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s10">
+  <div class="head"><span class="n">10</span><h2>Doğruluk ve değerlendirme</h2></div>
+
+  <p class="lead">Ölçülmeyen bir asistan, güvenilmeyen bir asistandır. Bu bölüm projenin <strong>çıkış kriteri altyapısıdır</strong> — Faz 1'in başarılı sayılıp sayılmayacağına buradaki sayılar karar verir, kanaat değil.</p>
+
+  <h3><span class="n">10.1</span>Altın soru kümesi</h3>
+  <p>Değerlendirmenin temeli, iş birimleriyle birlikte hazırlanan ve <strong>beklenen sonucu önceden bilinen</strong> soru kümesidir. Faz 1 için 150 soru hedeflenir:</p>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 10.1 — Kümenin üçte biri sistemin <strong>cevap vermemesi gereken</strong> sorulardan oluşur. Bu oran bilinçlidir: bu projede en pahalı hata yanlış cevaptır.</caption>
+      <thead><tr><th>Sınıf</th><th>Adet</th><th>Doğru sayılma ölçütü</th></tr></thead>
+      <tbody>
+        <tr><td>Basit tek metrik</td><td class="num">40</td><td>Sonuç kümesi referansla birebir eşit</td></tr>
+        <tr><td>Kırılımlı / sıralamalı</td><td class="num">35</td><td>Sonuç kümesi ve sıra birebir eşit</td></tr>
+        <tr><td>Dönem karşılaştırmalı</td><td class="num">25</td><td>Değerler ve dönem sınırları doğru</td></tr>
+        <tr><td>Takip sorusu (bağlamlı)</td><td class="num">15</td><td>Önceki spesifikasyondan doğru türetme</td></tr>
+        <tr><td>Muğlak — netleştirme beklenen</td><td class="num">15</td><td>Cevap değil, doğru soru sorması</td></tr>
+        <tr><td>Kapsam dışı — ret beklenen</td><td class="num">10</td><td>Net ret; uydurma yok</td></tr>
+        <tr><td>Yetkisiz — ret beklenen</td><td class="num">10</td><td>Ret + denetim kaydı; veri sızıntısı yok</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">10.2</span>Ölçütler</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Ölçüt</th><th>Tanım</th><th>Faz 1 eşiği</th><th>12. ay hedefi</th></tr></thead>
+      <tbody>
+        <tr><td>Yürütme doğruluğu</td><td>Üretilen sorgunun sonucu referans sonuçla aynı</td><td class="num">≥ %80</td><td class="num">≥ %90</td></tr>
+        <tr><td>Doğru reddetme</td><td>Cevaplanmaması gereken soruyu reddetme oranı</td><td class="num">≥ %90</td><td class="num">≥ %95</td></tr>
+        <tr><td>Yanlış reddetme</td><td>Cevaplanabilir soruyu gereksiz reddetme</td><td class="num">≤ %15</td><td class="num">≤ %8</td></tr>
+        <tr><td>Metrik eşleştirme isabeti</td><td>Doğru metriğin ilk sırada seçilmesi</td><td class="num">≥ %88</td><td class="num">≥ %94</td></tr>
+        <tr><td>Netleştirme yerindeliği</td><td>Muğlak soruda soru sorma oranı</td><td class="num">≥ %75</td><td class="num">≥ %85</td></tr>
+        <tr><td>Güven kalibrasyonu</td><td>Yüksek güvenli cevapların gerçek doğruluğu</td><td class="num">≥ %92</td><td class="num">≥ %96</td></tr>
+        <tr><td>p95 uçtan uca süre</td><td>Sorudan cevaba, sorgu süresi dahil</td><td class="num">≤ 25 sn</td><td class="num">≤ 20 sn</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box karar">
+    <div class="t">Karar D-10 — çıkış kriteri</div>
+    <p>Faz 1'den Faz 2'ye geçiş, <strong>yürütme doğruluğu %80 ve doğru reddetme %90</strong> eşiklerinin altın soru kümesinde sağlanmasına bağlıdır. Sağlanmazsa donanım yatırımı yapılmaz; eksik metrik tanımları tamamlanır ve ölçüm tekrarlanır. Bu kural, projeyi kurtarılamaz bir yatırıma dönüşmekten koruyan tek mekanizmadır.</p>
+  </div>
+
+  <h3><span class="n">10.3</span>Sürekli değerlendirme hattı</h3>
+  <ol class="flow">
+    <li><div class="w"><b>Gece koşusu</b><span>Altın küme her gece tam olarak çalıştırılır; sonuç panosu sabah hazırdır. <em>~150 soru · ~40 dk</em></span></div></li>
+    <li><div class="w"><b>Regresyon kapısı</b><span>İstem, metrik kaydı veya model sürümü değişikliği, doğruluğu 2 puandan fazla düşürüyorsa üretime çıkamaz.</span></div></li>
+    <li><div class="w"><b>Canlı örnekleme</b><span>Üretimdeki cevapların haftalık %2'si iş analisti tarafından körlemesine puanlanır; altın kümenin gerçeği yansıtıp yansıtmadığı böyle denetlenir.</span></div></li>
+    <li><div class="w"><b>Geri bildirim döngüsü</b><span>Kullanıcının "yanlış" işareti koyduğu her cevap incelenir; kök neden metrik tanımı, eşanlamlı eksikliği veya model hatası olarak sınıflanır ve ilgili katmana yazılır.</span></div></li>
+    <li><div class="w"><b>Küme büyütme</b><span>Gerçek kullanımdan gelen yeni soru kalıpları aylık olarak altın kümeye eklenir; küme canlı bir varlıktır, sabit bir sınav değil.</span></div></li>
+  </ol>
+
+  <h3><span class="n">10.4</span>Ölçüm dürüstlüğü</h3>
+  <p>Altın kümeyi hazırlayan ekip ile istemleri ayarlayan ekip aynı kişiler olmamalıdır; aksi hâlde küme farkında olmadan sisteme göre şekillenir ve ölçüm anlamını yitirir. Kümenin <strong>%20'si kilitli tutulur</strong> — geliştirme sırasında hiç görülmez, yalnızca faz geçiş kararlarında açılır.</p>
+</section>
+
+<section id="s11">
+  <div class="head"><span class="n">11</span><h2>Kullanıcı deneyimi</h2></div>
+
+  <p class="lead">Yöneticinin sisteme güveni ilk beş kullanımda kurulur ya da kalıcı olarak kaybedilir. Tasarımın tek amacı vardır: <strong>cevabın nereden geldiğini görünür kılmak</strong> ve emin olunmayan yerde emin görünmemek.</p>
+
+  <h3><span class="n">11.1</span>Bir cevabın anatomisi</h3>
+  <div class="wide">
+<pre>┌─────────────────────────────────────────────────────────────┐
+│ <b>2026 Q2 net ciro: 1.284,6 mn TL</b>          <i>▲ %12,4 (YoY)</i>      │
+│                                                             │
+│ [ tablo / grafik ]                                          │
+│                                                             │
+│ Geçen yılın aynı çeyreğine göre %12,4 artış var. Artışın    │
+│ en büyük kısmı Marmara ve Kurumsal Satış kanalından geldi.  │
+│                                                             │
+│ ─────────────────────────────────────────────────────────── │
+│ <i>Metrik</i>   Net Ciro · onaylı v3 · Finans        <b>[tanımı gör]</b>  │
+│ <i>Filtre</i>   2026-04-01 → 2026-06-30 · tüm bölgeler        │
+│ <i>Veri</i>     27.08.2026 06:12 itibarıyla (T-1)             │
+│ <i>Sorgu</i>    <b>[üretilen SQL'i gör]</b>   <i>Süre</i> 9,4 sn           │
+│                                                             │
+│ <b>[ Bölge kırılımı ]  [ Aylık trend ]  [ Excel ]</b>   👍 👎      │
+└─────────────────────────────────────────────────────────────┘</pre>
+  </div>
+  <p>Künye satırları isteğe bağlı bir "detay" bölümünde saklanmaz; <strong>her zaman görünürdür.</strong> Bunun nedeni şudur: cevabın kaynağını görmek zorunda kalan kullanıcı, zamanla sistemin sınırlarını da öğrenir ve ona doğru soruları sormaya başlar.</p>
+
+  <h3><span class="n">11.2</span>Güven durumlarına göre davranış</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Durum</th><th>Arayüz davranışı</th><th>Dil</th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill ok">Yüksek güven</span></td><td>Cevap doğrudan, künye ile</td><td>Kesin: "Q2 net ciro 1.284,6 mn TL."</td></tr>
+        <tr><td><span class="pill mid">Orta güven</span></td><td>Cevap + üstte tek satır varsayım notu</td><td>"Büyümeyi yüzde olarak yorumladım; tutar isterseniz değiştirebilirim."</td></tr>
+        <tr><td><span class="pill mid">Belirsiz</span></td><td>Cevap yok; en fazla 3 seçenekli netleştirme</td><td>"Tahsilat performansı için iki onaylı metrik var: ... Hangisi?"</td></tr>
+        <tr><td><span class="pill no">Kapsam dışı</span></td><td>Ret + neden + varsa alternatif</td><td>"Rakip pazar payı veri ambarında yok. Kendi pazar payı tahminimizi gösterebilirim."</td></tr>
+        <tr><td><span class="pill no">Yetkisiz</span></td><td>Ret; verinin varlığı ima edilmez</td><td>"Bu bilgiye erişim yetkiniz bulunmuyor."</td></tr>
+        <tr><td><span class="pill mid">Zaman aşımı</span></td><td>Kısmi sonuç veya daraltma önerisi</td><td>"Sorgu 30 sn'yi aştı. Dönemi daraltmayı deneyelim mi?"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">11.3</span>Gecikmenin yönetimi</h3>
+  <p>8–20 saniyelik bir cevap süresi, ne yaptığı görünüyorsa kabul edilebilir; boş bir bekleme göstergesiyse kabul edilemez. Arayüz her adımı canlı gösterir: <em>"Metrik eşleştiriliyor → Sorgu hazırlanıyor → Veri ambarında çalışıyor (6 sn) → Yorumlanıyor."</em> Sayısal sonuç, yorum metni beklenmeden gösterilir; yorum akış hâlinde üstüne yazılır. Böylece kullanıcı asıl cevabı ilk 8 saniyede görür.</p>
+
+  <h3><span class="n">11.4</span>Diğer ilkeler</h3>
+  <ul class="tight">
+    <li><strong>Grafik türü kod seçer, model değil.</strong> Zaman serisi → çizgi, kategori karşılaştırma → yatay çubuk, tek değer → büyük sayı + değişim. Model grafik türüne karar vermez.</li>
+    <li><strong>Excel'e aktarım her cevapta vardır.</strong> Yönetici çoğu zaman sayıyı kendi sunumuna taşır; bunu engellemek kullanımı düşürür.</li>
+    <li><strong>Örnek sorular boş ekranda gösterilir.</strong> Kullanıcı ne sorabileceğini bilmiyorsa sistemin kapsamı görünmez kalır.</li>
+    <li><strong>Başparmak geri bildirimi zorunlu bir üründür.</strong> §10.3'teki döngünün ana girdisidir; "yanlış" işaretine tek satırlık neden alanı eşlik eder.</li>
+    <li><strong>Mobil, salt görüntüleme.</strong> Üst yönetimin ana kullanım aracı telefondur; kırılım ve dışa aktarma masaüstünde kalabilir, cevap ve künye kalamaz.</li>
+    <li><strong>Erişilebilirlik.</strong> Renk tek başına anlam taşımaz; artış/azalış işaretle de belirtilir. Klavye ile tam gezinme ve ekran okuyucu uyumu zorunludur.</li>
+  </ul>
+</section>
+
+<section id="s12">
+  <div class="head"><span class="n">12</span><h2>Platform ve işletim</h2></div>
+
+  <p class="lead">Kapalı bir ortamda işletimin zor kısmı çalıştırmak değil, <strong>güncellemektir.</strong> İnternet erişimi olmayan bir sistemde her kütüphane, her model ağırlığı ve her yama elle taşınan bir tedarik zinciri kalemidir. Bu bölüm o zinciri tanımlar.</p>
+
+  <h3><span class="n">12.1</span>Dağıtım topolojisi</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 12.1 — Vektör indeksinde ve metadata deposunda tutulan hiçbir şey iş verisi değildir; yalnızca tanım ve isimlerdir. Yedekleme sınıflandırması buna göre yapılır.</caption>
+      <thead><tr><th>Bileşen</th><th>Örnek sayısı</th><th>Yerleşim</th><th>Durum</th></tr></thead>
+      <tbody>
+        <tr><td>Arayüz + API</td><td class="num">2</td><td>Uygulama bölgesi, yük dengeleyici arkasında</td><td>Durumsuz</td></tr>
+        <tr><td>Orkestrasyon servisi</td><td class="num">2</td><td>Uygulama bölgesi</td><td>Durumsuz (oturum harici depoda)</td></tr>
+        <tr><td>Çıkarım düğümü (ana model)</td><td class="num">2</td><td>Zekâ bölgesi, ayrılmış donanım</td><td>Durumsuz, ağırlıklar yerel diskte</td></tr>
+        <tr><td>Yardımcı model servisi</td><td class="num">2</td><td>Zekâ bölgesi, çıkarım düğümüyle aynı makine olabilir</td><td>Durumsuz</td></tr>
+        <tr><td>Vektör indeksi</td><td class="num">2</td><td>Uygulama bölgesi</td><td>Durumlu — metadata gömmeleri</td></tr>
+        <tr><td>Metadata deposu (metrik kaydı)</td><td class="num">1 + yedek</td><td>Uygulama bölgesi, ilişkisel veritabanı</td><td>Durumlu — yedeklenir</td></tr>
+        <tr><td>Önbellek</td><td class="num">2</td><td>Uygulama bölgesi</td><td>Geçici, kaybı tolere edilir</td></tr>
+        <tr><td>Denetim kaydı deposu</td><td class="num">1 küme</td><td>Yönetim bölgesi</td><td>Değiştirilemez, 24 ay saklama</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">12.2</span>Hizmet seviyesi hedefleri</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Gösterge</th><th>Hedef</th><th>Ölçüm</th><th>İhlalde</th></tr></thead>
+      <tbody>
+        <tr><td>Kullanılabilirlik (mesai saatleri)</td><td class="num">%99,5</td><td>Sağlık ucu + sentetik soru, 1 dk</td><td>Çağrı zinciri</td></tr>
+        <tr><td>p50 cevap süresi</td><td class="num">≤ 10 sn</td><td>Uçtan uca izleme</td><td>Kapasite incelemesi</td></tr>
+        <tr><td>p95 cevap süresi</td><td class="num">≤ 25 sn</td><td>Uçtan uca izleme</td><td>Kuyruk ayarı / düğüm ekleme</td></tr>
+        <tr><td>Kuyruk bekleme (tepe saat)</td><td class="num">≤ 8 sn</td><td>Kuyruk derinliği ölçümü</td><td>Eşzamanlılık sınırı gözden geçirilir</td></tr>
+        <tr><td>Doğruluk (gece koşusu)</td><td class="num">Eşik üstü</td><td>§10 hattı</td><td>Sürüm geri alınır</td></tr>
+        <tr><td>Sıfır dış bağlantı</td><td class="num">Mutlak</td><td>Ağ akış kaydı denetimi, haftalık</td><td>Güvenlik olayı</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">12.3</span>İzlenecek ölçümler</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="h">Model katmanı</div>
+      <p>Token/sn üretim hızı, ilk token gecikmesi, ön-dolum süresi, kuyruk derinliği, yuva doluluğu, KV önbellek isabeti, geçersiz JSON oranı.</p>
+    </div>
+    <div class="card">
+      <div class="h">Anlam katmanı</div>
+      <p>Metrik eşleştirme skoru dağılımı, netleştirme oranı, eşleşmeyen terimler (yeni eşanlamlı adayları), kayıt sürüm değişimleri.</p>
+    </div>
+    <div class="card">
+      <div class="h">Yürütme katmanı</div>
+      <p>Doğrulama başarısızlık oranı ve nedenleri, sorgu süresi dağılımı, zaman aşımı sayısı, önbellek isabet oranı, dönen satır sayısı.</p>
+    </div>
+    <div class="card">
+      <div class="h">Ürün katmanı</div>
+      <p>Günlük aktif kullanıcı, kullanıcı başına soru, tekrar kullanım oranı, başparmak geri bildirimi, terk edilen oturum, en sık sorular.</p>
+    </div>
+  </div>
+  <p>Bu ölçümlerin hiçbiri kurum dışına gönderilmez; izleme yığını da kapalı ortamda çalışır (K-01).</p>
+
+  <h3><span class="n">12.4</span>Değişiklik ve model yaşam döngüsü</h3>
+  <ol class="flow">
+    <li><div class="w"><b>Aday getirme</b><span>Model ağırlığı ya da kütüphane, onaylı bir kanaldan indirilip karma değeri doğrulanarak iç kayıt defterine alınır. <em>hukuk + güvenlik onayı</em></span></div></li>
+    <li><div class="w"><b>Yalıtılmış ölçüm</b><span>Aday, üretim dışı düğümde altın soru kümesiyle koşturulur; doğruluk ve token/sn birlikte raporlanır.</span></div></li>
+    <li><div class="w"><b>Karşılaştırmalı karar</b><span>Yeni model yalnızca doğruluk <em>ve</em> hız birlikte iyileşiyorsa geçer; tek başına doğruluk artışı, hız kaybını haklı çıkarmaz.</span></div></li>
+    <li><div class="w"><b>Gölge çalıştırma</b><span>Bir hafta boyunca gerçek sorular her iki modele gider, yalnızca eski modelin cevabı gösterilir; farklar incelenir.</span></div></li>
+    <li><div class="w"><b>Kademeli geçiş</b><span>%10 → %50 → %100 kullanıcı. Her adımda geri alma hazır; istem şablonları model sürümüne bağlı olarak sürümlenir.</span></div></li>
+  </ol>
+
+  <div class="box">
+    <div class="t">İstemler de koddur</div>
+    <p>Sistem istemleri, metrik kaydı ve şema tanımları sürüm kontrolünde tutulur, gözden geçirmeden geçer ve üretime onayla çıkar. "Hızlıca istemi düzelttim" diye yapılan doğrudan üretim değişikliği, bu sistemde bir üretim kodu değişikliğiyle aynı risktedir ve aynı disiplinle yönetilir.</p>
+  </div>
+
+  <h3><span class="n">12.5</span>Yedekleme ve süreklilik</h3>
+  <ul class="tight">
+    <li><strong>Kritik durum azdır:</strong> metrik kaydı, şablon kütüphanesi, denetim kaydı. Günlük yedek, aylık geri yükleme tatbikatı.</li>
+    <li><strong>Model ağırlıkları</strong> iç kayıt defterinde durur; düğüm kaybında yeniden dağıtım 30–60 dakikadır, veri kaybı yoktur.</li>
+    <li><strong>Vektör indeksi yeniden üretilebilir</strong> — metadata deposundan birkaç dakikada baştan kurulur, yedeklenmesi zorunlu değildir.</li>
+    <li><strong>Kısmi hizmet modu:</strong> Ana model düğümü düşerse sistem tamamen kapanmaz; şablon ve önbellek isabetli sorular cevaplanmaya devam eder, diğerleri "geçici olarak yanıtlanamıyor" der.</li>
+    <li><strong>Felaket senaryosu:</strong> Asistan kritiklik sınıfı ikinci derecedir; BI araçları birincil kanal olarak ayakta kalır. Kurtarma hedefi 4 saat, veri kaybı toleransı 24 saattir.</li>
+  </ul>
+</section>
+
+<section id="s13">
+  <div class="head"><span class="n">13</span><h2>Donanım ve kapasite</h2></div>
+
+  <p class="lead">Hızlandırıcısız bir kurulumda donanım listesi tek bir soruya indirgenir: <strong>saniyede kaç gigabayt okuyabiliyoruz?</strong> Çekirdek sayısı bir noktadan sonra fayda getirmez; bellek kanalı sayısı ve bellek hızı getirir.</p>
+
+  <h3><span class="n">13.1</span>Çıkarım düğümü özellikleri</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Bileşen</th><th>Asgari</th><th>Önerilen</th><th>Neden</th></tr></thead>
+      <tbody>
+        <tr><td>İşlemci</td><td>2 soket, soket başına 32 çekirdek, AVX-512</td><td>2 soket, 48–64 çekirdek, matris uzantıları (AMX sınıfı)</td><td>Matris uzantıları ön-dolumu 2–3 kat hızlandırır; üretim hızını değil</td></tr>
+        <tr><td>Bellek kanalı</td><td>8 kanal / soket</td><td class="num">12 kanal / soket</td><td><strong>En kritik kalem.</strong> Doğrudan token/sn belirler</td></tr>
+        <tr><td>Bellek</td><td class="num">256 GB DDR5-4800</td><td class="num">512 GB DDR5-5600+</td><td>Model + KV önbelleği + ön-dolum önbelleği + işletim payı</td></tr>
+        <tr><td>Depolama</td><td>1 TB NVMe</td><td>2 TB NVMe (okuma 3 GB/sn+)</td><td>Ağırlık yükleme süresi; çalışma anında disk kullanılmaz</td></tr>
+        <tr><td>Ağ</td><td class="num">10 GbE</td><td class="num">25 GbE</td><td>Veri ambarı sonuç transferi; darboğaz değil</td></tr>
+        <tr><td>Hızlandırıcı</td><td colspan="2">Yok — K-02 gereği</td><td>Mimari bu kısıta göre kurulmuştur</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <div class="t">Bellek yerleşimi — 512 GB'lık bir düğümde</div>
+    <p>Model ağırlıkları ~65 GB · KV önbelleği (2 yuva × 8K bağlam) ~6 GB · kalıcı ön-dolum önbelleği ~4 GB · yardımcı modeller ~4 GB · işletim sistemi ve sayfa önbelleği ~20 GB. Kalan alan ikinci bir model sürümünü <em>aynı anda</em> bellekte tutmaya ayrılır — gölge çalıştırma (§12.4) bunu gerektirir.</p>
+  </div>
+
+  <h3><span class="n">13.2</span>Kapasite hesabı</h3>
+  <div class="wide">
+<pre><i># Tepe saat varsayımı (§2.1): 6 eşzamanlı aktif soru</i>
+
+Önbellek + şablon isabeti           ~ %50   -&gt;  3 soru modele gitmez
+Modele giden eşzamanlı soru                     <b>3</b>
+Düğüm başına çıkarım yuvası                     2
+Gerekli düğüm (tepe)                            <b>2 düğüm</b>
+
+<i># Soru başına düğüm meşguliyeti</i>
+ön-dolum (2.500 token)              ~ 2,5 sn
+üretim (300 token @ 30 t/sn)        ~ 10 sn
+yorum üretimi (120 token)           ~ 4 sn
+                                    <b>= ~16 sn model zamanı</b>
+<i>(veri ambarı sorgu süresi bu sürenin dışındadır ve paraleldir)</i>
+
+Düğüm başına saatlik kapasite:  2 yuva x 3600 / 16   <b>= ~450 soru/saat</b>
+İki düğüm, %50 önbellek ile:                         <b>= ~1.800 soru/saat</b>
+Beklenen tepe yük (145 kullanıcı):                   ~ 300 soru/saat
+</pre>
+  </div>
+  <p>Yani iki düğüm, beklenen yükün yaklaşık altı katını taşır. Bu fazlalık israf değil, <strong>bilinçli bir tampondur:</strong> ölçülen token/sn kâğıttaki değerin yarısı çıkarsa, önbellek isabeti %50 yerine %25 kalırsa veya kullanım beklenenin iki katına çıkarsa sistem hâlâ ayaktadır. CPU çıkarımında gecikme, doygunluğa yaklaşıldığında doğrusal değil, ani biçimde bozulur.</p>
+
+  <h3><span class="n">13.3</span>Üç kurulum seçeneği</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 13.1 — Faz 1, mevcut donanımda yapılabilir. Ayrılmış donanım yatırımı §10'daki çıkış kriteri sağlandıktan sonra tetiklenir; sıralama bilinçlidir.</caption>
+      <thead><tr><th></th><th>S · Kanıtlama</th><th>M · Üretim (öneri)</th><th>L · Yaygın kullanım</th></tr></thead>
+      <tbody>
+        <tr><td>Çıkarım düğümü</td><td class="num">1 (mevcut sunucu)</td><td class="num">2 ayrılmış</td><td class="num">4 ayrılmış</td></tr>
+        <tr><td>Düğüm başına bellek</td><td class="num">256 GB</td><td class="num">512 GB</td><td class="num">512 GB</td></tr>
+        <tr><td>Eşzamanlı kullanıcı</td><td class="num">1–2</td><td class="num">4–8</td><td class="num">10–16</td></tr>
+        <tr><td>Kapsanan kullanıcı</td><td class="num">10–15 pilot</td><td class="num">150</td><td class="num">400+</td></tr>
+        <tr><td>Yüksek erişilebilirlik</td><td><span class="pill no">Yok</span></td><td><span class="pill ok">Var</span></td><td><span class="pill ok">Var</span></td></tr>
+        <tr><td>Ne zaman</td><td>Faz 0–1</td><td>Faz 2–3</td><td>Faz 4, talep kanıtlanınca</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">13.4</span>Ölçekleme davranışı</h3>
+  <ul class="tight">
+    <li><strong>Yatay ölçekleme doğrusaldır</strong> — çıkarım durumsuzdur, düğüm eklemek eşzamanlılığı doğrudan artırır.</li>
+    <li><strong>Dikey ölçekleme sınırlıdır</strong> — daha fazla çekirdek, bellek bant genişliği artmadan token/sn'yi artırmaz. Yükseltme yapılacaksa bellek kanalı ve hızı hedeflenir.</li>
+    <li><strong>Önbellek en ucuz kapasitedir.</strong> İsabet oranını %35'ten %55'e çıkarmak, bir düğüm eklemekle aynı etkiyi yapar ve maliyeti neredeyse sıfırdır. İlk optimizasyon adresi burasıdır.</li>
+    <li><strong>Bağlam uzunluğu bir kapasite kalemidir.</strong> 8K yerine 32K bağlam, ön-dolum süresini dört katına çıkarır ve düğüm kapasitesini yarıya indirir. Uzun bağlam talebi geldiğinde bu maliyet konuşulmalıdır.</li>
+  </ul>
+</section>
+
+<section id="s14">
+  <div class="head"><span class="n">14</span><h2>Uçtan uca değerlendirme</h2></div>
+
+  <p class="lead">Buraya kadarki bölümler sistemin <em>nasıl</em> kurulacağını anlattı. Bu bölüm <em>kurulmalı mı</em> sorusunu cevaplıyor: hangi boyutta güçlü, hangi boyutta zayıf, alternatiflere göre nerede duruyor ve hangi koşulda durdurulmalı.</p>
+
+  <h3><span class="n">14.1</span>Boyut boyut hüküm</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Boyut</th><th>Hüküm</th><th>Gerekçe</th></tr></thead>
+      <tbody>
+        <tr><td>Veri mahremiyeti</td><td><span class="pill ok">Güçlü</span></td><td>Mimari olarak dışa çıkış yolu yok; bu tasarımın en sağlam yanı ve asıl gerekçesi</td></tr>
+        <tr><td>Teknik yapılabilirlik</td><td><span class="pill ok">Yapılabilir</span></td><td>Model sorgu yazdığı sürece CPU yeterli; hesap §5 ve §13'te açık</td></tr>
+        <tr><td>Kapsam içi doğruluk</td><td><span class="pill ok">Yeterli</span></td><td>%85–92 hedefi, onaylı metrik ve şablon disiplini ile ulaşılabilir</td></tr>
+        <tr><td>Kapsam genişliği</td><td><span class="pill mid">Sınırlı</span></td><td>Yalnızca kayıtlı metrikler. "Her şeyi soran asistan" değil — bilinçli olarak</td></tr>
+        <tr><td>Gecikme</td><td><span class="pill mid">Kabul edilebilir</span></td><td>8–20 sn; şeffaf ilerleme göstergesiyle tolere edilir, hızlandırıcılı sistemlerin 3–5 katı</td></tr>
+        <tr><td>Eşzamanlılık</td><td><span class="pill mid">Dar</span></td><td>Düğüm başına 2 aktif üretim; önbellek olmadan 145 kullanıcı taşınmaz</td></tr>
+        <tr><td>Yönetişim yükü</td><td><span class="pill no">Yüksek</span></td><td>Metrik kaydı sürekli emek ister; projenin gizli asıl maliyeti burada</td></tr>
+        <tr><td>Açık uçlu analiz</td><td><span class="pill no">Zayıf</span></td><td>"Neden" soruları kırılım gösterir, nedensellik kurmaz; analistin yerini almaz</td></tr>
+        <tr><td>Değişime dayanıklılık</td><td><span class="pill ok">Güçlü</span></td><td>Model değiştirilebilir bir parça; yatırımın çoğu metadata'da ve modelden bağımsız</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">14.2</span>Alternatiflerin dürüst karşılaştırması</h3>
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 14.1 — Bu tasarımın rakibi "daha iyi bir mimari" değil, çoğu zaman "hiç yapmamak" ya da "hazır ürün almak"tır. İkisi de ciddiye alınarak değerlendirilmiştir.</caption>
+      <thead><tr><th>Seçenek</th><th>Artı</th><th>Eksi</th><th>Hüküm</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Bu tasarım</strong><br><span class="pill acc">CPU · şirket içi</span></td>
+          <td>Sıfır veri çıkışı; mevcut donanımla başlanabilir; metadata yatırımı kalıcı ve taşınabilir</td>
+          <td>Dar kapsam; yavaş; yönetişim emeği yüksek</td>
+          <td><span class="pill ok">Önerilen</span></td>
+        </tr>
+        <tr>
+          <td><strong>Şirket içi + hızlandırıcı</strong></td>
+          <td>5–10 kat hız; geniş bağlam; açık uçlu analize alan açar</td>
+          <td>Ciddi donanım yatırımı; K-02 ile çelişir; doğruluğu <em>artırmaz</em> — doğruluk metadata işidir</td>
+          <td><span class="pill mid">Faz 4'te yeniden değerlendir</span></td>
+        </tr>
+        <tr>
+          <td><strong>Bulut LLM servisi</strong></td>
+          <td>En yüksek model kalitesi; işletim yükü yok; en hızlı kurulum</td>
+          <td>K-01'i doğrudan ihlal eder; soru metinleri bile dışarı çıkar</td>
+          <td><span class="pill no">Elenmiştir</span></td>
+        </tr>
+        <tr>
+          <td><strong>Hazır ticari NL-BI ürünü</strong></td>
+          <td>Kısa sürede çalışır; arayüz ve bakım satıcıda</td>
+          <td>Çoğu bulut bağımlı; şirket içi sürümler pahalı ve yine metrik tanımı ister; kurumun anlam katmanı satıcıya kilitlenir</td>
+          <td><span class="pill mid">Faz 0'da fiyatla karşılaştır</span></td>
+        </tr>
+        <tr>
+          <td><strong>Yapmamak — mevcut BI + analist</strong></td>
+          <td>Sıfır risk; bilinen süreç</td>
+          <td>Rapor talebi kuyruğu sürer; "basit soru" için analist zamanı harcanır</td>
+          <td><span class="pill mid">Gerçek karşılaştırma tabanı</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <div class="t">Dikkat edilmesi gereken karşılaştırma</div>
+    <p>Bu sistemin başarısı "ChatGPT kadar iyi mi?" sorusuyla ölçülmemelidir. Doğru karşılaştırma şudur: <strong>bir yöneticinin bu soruyu bugün nasıl cevapladığı.</strong> Bugünkü yol çoğu kurumda analiste e-posta atmak ve yarım gün ile iki gün arasında beklemektir. 15 saniyede gelen, kaynağı görünür, kapsamı dar ama doğru bir cevap — bu tabana göre büyük bir kazançtır.</p>
+  </div>
+
+  <h3><span class="n">14.3</span>Risk kaydı</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Risk</th><th>Olasılık</th><th>Etki</th><th>Azaltma</th><th>Sahibi</th></tr></thead>
+      <tbody>
+        <tr><td class="id">R-01</td><td>Metrik tanımları yok veya iş birimleri uzlaşamıyor</td><td><span class="pill no">Yüksek</span></td><td><span class="pill no">Kritik</span></td><td>Faz 1 kapsamını tek konu alanına daraltmak; tanım üretimini projenin birinci işi saymak</td><td>Veri yönetişimi</td></tr>
+        <tr><td class="id">R-02</td><td>Ölçülen token/sn beklenenin altında çıkıyor</td><td><span class="pill mid">Orta</span></td><td><span class="pill no">Yüksek</span></td><td>Faz 0'da gerçek donanımda ölçüm; çıktı uzunluğunu kısaltma; şablon oranını artırma</td><td>Platform</td></tr>
+        <tr><td class="id">R-03</td><td>Türkçe anlama kalitesi yetersiz</td><td><span class="pill mid">Orta</span></td><td><span class="pill mid">Orta</span></td><td>Eşanlamlı sözlüğünü genişletmek; üç aday modeli Türkçe altın kümeyle karşılaştırmak</td><td>Yapay zekâ ekibi</td></tr>
+        <tr><td class="id">R-04</td><td>Kullanıcı ilk yanlış cevaptan sonra sistemi terk ediyor</td><td><span class="pill no">Yüksek</span></td><td><span class="pill no">Yüksek</span></td><td>Şeffaf künye; agresif reddetme politikası; pilot kullanıcılarla beklenti yönetimi</td><td>Ürün</td></tr>
+        <tr><td class="id">R-05</td><td>Kapsam kayması — "şuna da baksın" talepleri</td><td><span class="pill no">Yüksek</span></td><td><span class="pill mid">Orta</span></td><td>§1.3 yazılı kapsam dışı listesi; her genişleme yönetişim onayı ve ölçüm gerektirir</td><td>Proje sahibi</td></tr>
+        <tr><td class="id">R-06</td><td>Kapalı ortamda kütüphane/yama tedariki tıkanıyor</td><td><span class="pill mid">Orta</span></td><td><span class="pill mid">Orta</span></td><td>İç kayıt defteri ve onaylı paket kanalı Faz 0'da kurulur, sonradan değil</td><td>Platform</td></tr>
+        <tr><td class="id">R-07</td><td>Anahtar kişiye bağımlılık</td><td><span class="pill mid">Orta</span></td><td><span class="pill mid">Orta</span></td><td>Metrik kaydı ve istemler sürüm kontrolünde; kurulum tamamen otomatik ve belgeli</td><td>Platform</td></tr>
+        <tr><td class="id">R-08</td><td>Denetim/uyum ekibi mimariyi yeterli bulmuyor</td><td><span class="pill ok">Düşük</span></td><td><span class="pill no">Yüksek</span></td><td>CISO ve uyum birimini Faz 0'da masaya almak; §9'u tasarım onayı olarak imzalatmak</td><td>Güvenlik</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">14.4</span>İnce ayar gerekli mi</h3>
+  <p>Kısa cevap: <strong>Faz 3'ten önce hayır.</strong> Bu tür projelerde ince ayar çoğunlukla yanlış sorunun çözümüdür — hatalar genellikle modelin yeteneğinden değil, eksik metrik tanımından, eksik eşanlamlıdan veya belirsiz sorudan kaynaklanır. İnce ayar bunların hiçbirini düzeltmez, yalnızca maliyeti ve bağımlılığı artırır.</p>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Önce denenecek</th><th>Beklenen kazanç</th><th>Maliyet</th></tr></thead>
+      <tbody>
+        <tr><td>Eşanlamlı sözlüğünü gerçek kullanımdan büyütmek</td><td class="num">+5–10 puan</td><td>Düşük — sürekli</td></tr>
+        <tr><td>Örnek soru–spesifikasyon çiftlerini bağlama koymak</td><td class="num">+4–8 puan</td><td>Düşük</td></tr>
+        <tr><td>Şablon kütüphanesini genişletmek</td><td class="num">+3–6 puan ve hız</td><td>Orta</td></tr>
+        <tr><td>Daha iyi bir açık model sürümüne geçmek</td><td class="num">+3–7 puan</td><td>Orta — §12.4 süreci</td></tr>
+        <tr><td><em>Ancak bunlardan sonra:</em> göreve özel ince ayar</td><td class="num">+2–5 puan</td><td><span class="pill no">Yüksek — veri, süreç, bakım</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>İnce ayar gündeme gelirse hedef modeli daha zeki yapmak değil, <strong>küçük bir modeli spesifikasyon üretmede yeterli hâle getirmek</strong> olmalıdır — yani kalite değil, hız kazancı. CPU ortamında asıl kazanç oradadır.</p>
+
+  <h3><span class="n">14.5</span>Bu proje nasıl başarısız olur</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="h">1 · Tanımsız metriklerle başlamak</div>
+      <p>En yaygın ölüm nedeni. Metrik kaydı olmadan kurulan asistan, iş birimlerinin farklı "ciro" tanımlarını rastgele karıştırır ve ilk toplantıda çürütülür. Sıra bellidir: önce tanım, sonra asistan.</p>
+    </div>
+    <div class="card">
+      <div class="h">2 · Geniş vaatle başlamak</div>
+      <p>"Her şeyi sorabilirsiniz" demek, sistemi kendi kapsamının dışında sınava sokar. Dar ve net vaat, ilk günden itibaren güven biriktirir.</p>
+    </div>
+    <div class="card">
+      <div class="h">3 · Model kovalamak</div>
+      <p>Doğruluk düştüğünde çözümü daha büyük modelde aramak, CPU bütçesini tüketir ve sorunu çözmez. Hataların kök nedeni ölçülmeden model değiştirilmemelidir.</p>
+    </div>
+    <div class="card">
+      <div class="h">4 · Ölçmeden ilerlemek</div>
+      <p>Altın soru kümesi olmadan "iyi çalışıyor gibi" hissiyle üretime çıkmak. İlk yanlış yönetici cevabı, projenin itibarını teknik olarak onarılamaz biçimde bitirir.</p>
+    </div>
+    <div class="card">
+      <div class="h">5 · Reddetmekten çekinmek</div>
+      <p>Sistemi her soruya cevap verir hâle getirme baskısı gelir. Buna direnilmezse doğru reddetme oranı düşer ve sistem güvenilir olmaktan çıkar.</p>
+    </div>
+    <div class="card">
+      <div class="h">6 · Yönetişimi bütçelememek</div>
+      <p>Metrik bakımına kimse atanmazsa kayıt altı ayda eskir, tanımlar kayar ve doğruluk sessizce düşer. Bu, en yavaş ve en sinsi başarısızlık biçimidir.</p>
+    </div>
+  </div>
+
+  <h3><span class="n">14.6</span>Durdurma kriterleri</h3>
+  <p>Bir projeyi ne zaman durduracağını baştan yazmak, onu kurtarmanın en ucuz yoludur. Aşağıdaki koşullardan biri gerçekleşirse proje <strong>genişletilmez;</strong> ya kapsam daraltılır ya durdurulur:</p>
+  <ul>
+    <li><strong>D-1.</strong> Faz 1 sonunda yürütme doğruluğu %70'in altındaysa ve kök neden analizi metrik tanımlarına işaret etmiyorsa — mimari varsayım yanlış demektir.</li>
+    <li><strong>D-2.</strong> Gerçek donanımda ölçülen üretim hızı 10 token/sn'nin altındaysa ve önbellek isabeti %30'a çıkarılamıyorsa — kullanıcı deneyimi eşiği aşılamaz.</li>
+    <li><strong>D-3.</strong> 12 hafta sonunda 25 metrik için iş birimlerinden onaylı tanım alınamadıysa — bu bir yönetişim tıkanıklığıdır, teknoloji ile çözülmez.</li>
+    <li><strong>D-4.</strong> Pilot sonunda haftalık aktif kullanıcı oranı pilot grubunun %30'unun altındaysa — talep varsayımı yanlıştır.</li>
+    <li><strong>D-5.</strong> Doğru reddetme oranı %85'in altında kalıcı hâle geldiyse — sistem güvenilmez veri üretiyor demektir; bu tek başına durdurma nedenidir.</li>
+  </ul>
+
+  <div class="box karar">
+    <div class="t">Genel hüküm</div>
+    <p><strong>Yapılabilir ve yapılmaya değer</strong> — ancak bunun bir yapay zekâ projesi olduğu kadar bir <em>veri yönetişimi projesi</em> olduğu kabul edilmek şartıyla. Emeğin yaklaşık yarısı metrik tanımı, sözlük ve ölçüm altyapısına gidecektir; model ve altyapı işi kalan yarıdır. Bu gerçek baştan kabul edilirse proje büyük olasılıkla başarılı olur; "model kurup üstüne veri bağlayalım" beklentisiyle başlanırsa büyük olasılıkla başarısız olur.</p>
+  </div>
+</section>
+
+<section id="s15">
+  <div class="head"><span class="n">15</span><h2>Yol haritası</h2></div>
+
+  <p class="lead">Plan tek bir ilkeye göre kurulmuştur: <strong>geri dönülemez harcamayı ölçümden sonraya bırakmak.</strong> İlk üç ay mevcut donanımla, dar kapsamda ve tek amaçla yürür — varsayımların hangisinin doğru olduğunu öğrenmek.</p>
+
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 15.1 — Toplam: kanıtlanmış bir üretim sistemine yaklaşık 7–8 ay. Faz 1 ve 2 arasındaki kapı, bu planın tek gerçek karar noktasıdır.</caption>
+      <thead><tr><th>Faz</th><th>Süre</th><th>Kapsam</th><th>Ana çıktı</th><th>Çıkış kriteri</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="id">Faz 0<br>Keşif</td><td class="num">4 hafta</td>
+          <td>Varsayım doğrulama; DWH ve semantik model incelemesi; donanımda gerçek token/sn ölçümü; 3 aday model kıyası; iç paket kanalının kurulması</td>
+          <td>Ölçüm raporu, model kararı, güncellenmiş mimari</td>
+          <td>V-01…V-05 doğrulandı; ölçülen hız ≥ 15 token/sn</td>
+        </tr>
+        <tr>
+          <td class="id">Faz 1<br>Kanıtlama</td><td class="num">8 hafta</td>
+          <td>Tek konu alanı (öneri: satış ve gelir); 25 onaylı metrik; 150 soruluk altın küme; uçtan uca zincirin çalışır hâli; 10–15 kişilik kapalı grup</td>
+          <td>Çalışan asistan + ölçüm panosu</td>
+          <td><strong>Doğruluk ≥ %80, doğru reddetme ≥ %90</strong> (D-10)</td>
+        </tr>
+        <tr>
+          <td class="id">Faz 2<br>Pilot</td><td class="num">10 hafta</td>
+          <td>İkinci konu alanı; 60 metrik; yetki entegrasyonunun tam kurulumu; üretim donanımına geçiş; 40–50 kullanıcı</td>
+          <td>Üretime hazır sistem, işletim el kitabı</td>
+          <td>Haftalık aktif kullanıcı ≥ %50; p95 ≤ 25 sn; güvenlik onayı</td>
+        </tr>
+        <tr>
+          <td class="id">Faz 3<br>Üretim</td><td class="num">8 hafta</td>
+          <td>Tüm hedef kullanıcılara açılış; yüksek erişilebilirlik; Teams entegrasyonu; eğitim ve benimseme çalışması</td>
+          <td>Üretim hizmeti + hizmet seviyesi taahhüdü</td>
+          <td>SLO'lar 4 hafta üst üste tutuyor</td>
+        </tr>
+        <tr>
+          <td class="id">Faz 4<br>Genişleme</td><td>sürekli</td>
+          <td>Yeni konu alanları; zamanlanmış brifingler; anomali bildirimi; hızlandırıcı ihtiyacının yeniden değerlendirilmesi</td>
+          <td>Çeyreklik kapsam artışı</td>
+          <td>Her genişlemede doğruluk eşiği korunur</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">15.1</span>Faz 1 haftalık kırılımı</h3>
+  <div class="wide">
+<pre><b>H1–H2</b>  Metrik kaydı şeması + ilk 10 metriğin iş birimiyle tanımlanması
+        Altın küme ilk 60 soru · veri ambarı okuma replikası hazır
+<b>H3–H4</b>  Sorgu derleyici + doğrulayıcı · şema kısıtlı üretim çalışıyor
+        Eşanlamlı sözlüğü v1 · gömme + yeniden sıralama hattı
+<b>H5–H6</b>  Ajan durum makinesi · netleştirme ve ret akışları
+        Arayüz v1 (künye dahil) · denetim kaydı yazımı
+<b>H7</b>     Kalan 15 metrik · altın küme 150'ye tamamlanıyor · önbellek katmanı
+<b>H8</b>     <b>Kilitli %20 ile ölçüm · kapı kararı · Faz 2 kapsam tanımı</b>
+
+<i># H4 sonunda ara kontrol: uçtan uca tek soru cevaplanabiliyor olmalı.
+# Bu tarih kayarsa Faz 1 kapsamı 25 metrikten 15'e indirilir, süre uzatılmaz.</i>
+</pre>
+  </div>
+
+  <div class="box">
+    <div class="t">Neden süre değil kapsam esnetilir</div>
+    <p>Sabit süre + esnek kapsam, bu tür projelerde tek işleyen disiplindir. Süre uzatıldığında kapsam da büyür ve ölçüm hiç yapılmadan aylar geçer. Faz 1'in sekizinci haftasında elde ne varsa onunla ölçüm yapılır ve kapı kararı verilir.</p>
+  </div>
+</section>
+
+<section id="s16">
+  <div class="head"><span class="n">16</span><h2>Ekip ve sorumluluklar</h2></div>
+
+  <div class="wide scroll">
+    <table>
+      <caption>Tablo 16.1 — Veri yönetişimi rolü tam zamanlıdır ve pazarlık konusu değildir. Bu rol yarı zamanlıya düşürüldüğünde ilk kaybedilen şey doğruluktur; kaybedildiği de aylar sonra fark edilir.</caption>
+      <thead><tr><th>Rol</th><th>Faz 0–1</th><th>Faz 2–3</th><th>Üretim</th><th>Sorumluluk</th></tr></thead>
+      <tbody>
+        <tr><td>Ürün sahibi</td><td class="num">0,5</td><td class="num">0,5</td><td class="num">0,3</td><td>Kapsam savunması, öncelik, kullanıcı ilişkisi, kapı kararlarının hazırlanması</td></tr>
+        <tr><td>Yapay zekâ / uygulama mühendisi</td><td class="num">2,0</td><td class="num">2,0</td><td class="num">1,0</td><td>Ajan zinciri, istemler, derleyici, değerlendirme hattı</td></tr>
+        <tr><td>Veri mühendisi</td><td class="num">1,0</td><td class="num">1,0</td><td class="num">0,5</td><td>Okuma replikası, metadata deposu, boyut değer indeksi, tazelik</td></tr>
+        <tr><td>Veri yönetişimi / iş analisti</td><td class="num">1,0</td><td class="num">1,0</td><td class="num">0,5</td><td><strong>Metrik kaydı, altın küme, cevap denetimi</strong> — projenin doğruluk sahibi</td></tr>
+        <tr><td>Platform / sistem mühendisi</td><td class="num">0,5</td><td class="num">1,0</td><td class="num">0,4</td><td>Çıkarım düğümleri, konteyner platformu, izleme, paket kanalı</td></tr>
+        <tr><td>Arayüz geliştirici</td><td class="num">0,5</td><td class="num">1,0</td><td class="num">0,3</td><td>Sohbet arayüzü, künye sunumu, mobil, erişilebilirlik</td></tr>
+        <tr><td>Güvenlik mühendisi</td><td class="num">0,3</td><td class="num">0,5</td><td class="num">0,2</td><td>Tehdit modeli, ağ izolasyonu, yetki doğrulaması, denetim</td></tr>
+        <tr><td><strong>Toplam</strong></td><td class="num"><strong>5,8</strong></td><td class="num"><strong>7,0</strong></td><td class="num"><strong>3,2</strong></td><td>Tam zamanlı eşdeğer</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">16.1</span>Karar hakları</h3>
+  <ul class="tight">
+    <li><strong>Metrik tanımı:</strong> ilgili iş biriminin sahibi karar verir, veri yönetişimi kaydeder. Yapay zekâ ekibi tanım yazmaz.</li>
+    <li><strong>Kapsam genişletme:</strong> ürün sahibi önerir, yönetişim kurulu onaylar; ölçüm eşiği korunmak zorundadır.</li>
+    <li><strong>Model değişikliği:</strong> yapay zekâ ekibi önerir, §12.4 süreci karar verir; ölçüm olmadan değişiklik yapılmaz.</li>
+    <li><strong>Yetki kuralları:</strong> güvenlik ve veri sahipleri; asistan ekibinin bu konuda takdir yetkisi yoktur.</li>
+    <li><strong>Faz kapıları:</strong> CIO/CDO; girdi olarak §10 ölçüm raporu ve §14.6 durdurma kriterleri kullanılır.</li>
+  </ul>
+</section>
+
+<section id="s17">
+  <div class="head"><span class="n">17</span><h2>Gereksinim listesi</h2></div>
+
+  <h3><span class="n">17.1</span>İşlevsel gereksinimler</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Gereksinim</th><th>Öncelik</th><th>Faz</th></tr></thead>
+      <tbody>
+        <tr><td class="id">F-01</td><td>Kullanıcı Türkçe doğal dille soru sorabilir; İngilizce sorular da desteklenir</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-02</td><td>Sistem soruyu onaylı metrik ve boyutlara eşler, eşleşme başarısızsa açıkça bildirir</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-03</td><td>Model şema ile kısıtlanmış sorgu spesifikasyonu üretir; serbest SQL üretmez</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-04</td><td>Spesifikasyon deterministik derleyici ile SQL/DAX'a çevrilir ve doğrulanır</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-05</td><td>Her cevapta metrik tanımı, filtreler, veri tazelik zamanı ve üretilen sorgu gösterilir</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-06</td><td>Muğlak soruda en fazla 3 seçenekli netleştirme sorulur</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-07</td><td>Kapsam dışı ve yetkisiz sorular gerekçeli olarak reddedilir; tahmin üretilmez</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-08</td><td>Takip soruları önceki sorgu spesifikasyonu üzerinden bağlamla yanıtlanır</td><td><span class="pill acc">Zorunlu</span></td><td class="num">2</td></tr>
+        <tr><td class="id">F-09</td><td>Sonuçlar tablo ve uygun grafik türüyle sunulur; grafik türünü kod seçer</td><td><span class="pill acc">Zorunlu</span></td><td class="num">2</td></tr>
+        <tr><td class="id">F-10</td><td>Kullanıcı sonucu Excel/CSV olarak dışa aktarabilir</td><td><span class="pill mid">Önemli</span></td><td class="num">2</td></tr>
+        <tr><td class="id">F-11</td><td>Kullanıcı cevabı olumlu/olumsuz işaretleyebilir ve kısa gerekçe girebilir</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-12</td><td>Yönetişim ekibi metrik kaydını arayüzden görüntüleyip sürümleyebilir</td><td><span class="pill mid">Önemli</span></td><td class="num">2</td></tr>
+        <tr><td class="id">F-13</td><td>Tüm sorular ve cevaplar denetim kaydına yazılır ve sorgulanabilir</td><td><span class="pill acc">Zorunlu</span></td><td class="num">1</td></tr>
+        <tr><td class="id">F-14</td><td>Kullanıcı kendi soru geçmişini görebilir ve silinmesini talep edebilir</td><td><span class="pill mid">Önemli</span></td><td class="num">3</td></tr>
+        <tr><td class="id">F-15</td><td>Teams veya intranet üzerinden erişim</td><td><span class="pill">İsteğe bağlı</span></td><td class="num">3</td></tr>
+        <tr><td class="id">F-16</td><td>Kaydedilmiş sorgunun zamanlanmış brifing olarak gönderilmesi</td><td><span class="pill">İsteğe bağlı</span></td><td class="num">4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">17.2</span>İşlevsel olmayan gereksinimler</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Gereksinim</th><th>Ölçüt</th></tr></thead>
+      <tbody>
+        <tr><td class="id">NF-01</td><td>Hiçbir veri, soru metni dahil, kurum ağı dışına çıkmaz</td><td>Haftalık ağ akış denetimi: sıfır dış bağlantı</td></tr>
+        <tr><td class="id">NF-02</td><td>Sistem hızlandırıcı olmadan çalışır</td><td>Üretim düğümlerinde hızlandırıcı yok</td></tr>
+        <tr><td class="id">NF-03</td><td>Uçtan uca cevap süresi</td><td>p50 ≤ 10 sn · p95 ≤ 25 sn</td></tr>
+        <tr><td class="id">NF-04</td><td>İlk geri bildirim (ilerleme veya ilk token)</td><td>≤ 3 sn</td></tr>
+        <tr><td class="id">NF-05</td><td>Eşzamanlılık</td><td>Tepe saatte 6 aktif soru, kuyruk beklemesi ≤ 8 sn</td></tr>
+        <tr><td class="id">NF-06</td><td>Kullanılabilirlik (mesai saatleri)</td><td>%99,5</td></tr>
+        <tr><td class="id">NF-07</td><td>Yetki, veri katmanındaki kurallarla birebir aynı sonucu verir</td><td>Yetki testi kümesi: sıfır sapma</td></tr>
+        <tr><td class="id">NF-08</td><td>Sistem yalnızca okuma yapar</td><td>Bağlantı kullanıcısında yazma yetkisi yok</td></tr>
+        <tr><td class="id">NF-09</td><td>Denetim kaydı değiştirilemez ve 24 ay saklanır</td><td>Değiştirilemez depo, erişim kaydı</td></tr>
+        <tr><td class="id">NF-10</td><td>Model ve kütüphaneler imzalı iç kanaldan gelir</td><td>Karma doğrulaması zorunlu</td></tr>
+        <tr><td class="id">NF-11</td><td>Arayüz erişilebilirlik uyumlu ve mobil uyumludur</td><td>Klavye gezinme, ekran okuyucu, kontrast</td></tr>
+        <tr><td class="id">NF-12</td><td>Kurtarma hedefi 4 saat, veri kaybı toleransı 24 saat</td><td>Aylık geri yükleme tatbikatı</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="s18">
+  <div class="head"><span class="n">18</span><h2>Kabul kriterleri</h2></div>
+
+  <p class="lead">Aşağıdaki maddeler <strong>test edilebilir</strong> biçimde yazılmıştır; her biri altın soru kümesi veya belgelenmiş bir kontrol ile doğrulanır. Kanaat ifadesi ("kullanıcılar memnun") kabul kriteri sayılmaz.</p>
+
+  <h3><span class="n">18.1</span>Faz 1 kapı kriterleri</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Kriter</th><th>Doğrulama yöntemi</th></tr></thead>
+      <tbody>
+        <tr><td class="id">K1-01</td><td>Kilitli %20'lik altın kümede yürütme doğruluğu ≥ %80</td><td>Otomatik koşu, sonuç kümesi karşılaştırması</td></tr>
+        <tr><td class="id">K1-02</td><td>Reddedilmesi gereken 20 soruda doğru reddetme ≥ %90</td><td>Otomatik koşu + manuel inceleme</td></tr>
+        <tr><td class="id">K1-03</td><td>Yetkisiz 10 soruda sıfır veri sızıntısı; hepsi denetim kaydında</td><td>Güvenlik ekibi denetimi</td></tr>
+        <tr><td class="id">K1-04</td><td>25 metrik onaylı tanıma sahip ve kayıtta sürümlü</td><td>Metrik kaydı incelemesi, iş birimi imzası</td></tr>
+        <tr><td class="id">K1-05</td><td>Her cevapta künye (metrik, filtre, tazelik, sorgu) görünür</td><td>Arayüz kabul testi</td></tr>
+        <tr><td class="id">K1-06</td><td>Ölçülen üretim hızı ≥ 15 token/sn, p95 ≤ 30 sn</td><td>Yük testi raporu</td></tr>
+        <tr><td class="id">K1-07</td><td>Gece değerlendirme koşusu ve regresyon kapısı çalışır durumda</td><td>Ardışık 5 gün kesintisiz koşu</td></tr>
+        <tr><td class="id">K1-08</td><td>Sistem hiçbir dış ağ bağlantısı kurmuyor</td><td>Ağ akış kaydı, 7 günlük gözlem</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">18.2</span>Üretim kabul kriterleri</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Kriter</th><th>Eşik</th></tr></thead>
+      <tbody>
+        <tr><td class="id">KP-01</td><td>Yürütme doğruluğu, tam altın küme</td><td class="num">≥ %88</td></tr>
+        <tr><td class="id">KP-02</td><td>Doğru reddetme</td><td class="num">≥ %93</td></tr>
+        <tr><td class="id">KP-03</td><td>Yanlış reddetme</td><td class="num">≤ %10</td></tr>
+        <tr><td class="id">KP-04</td><td>p95 uçtan uca süre, tepe saatte</td><td class="num">≤ 25 sn</td></tr>
+        <tr><td class="id">KP-05</td><td>Kullanılabilirlik, 4 hafta ölçüm</td><td class="num">≥ %99,5</td></tr>
+        <tr><td class="id">KP-06</td><td>Yetki testi kümesinde veri katmanıyla sapma</td><td class="num">0</td></tr>
+        <tr><td class="id">KP-07</td><td>Haftalık aktif kullanıcı / hedef kitle</td><td class="num">≥ %50</td></tr>
+        <tr><td class="id">KP-08</td><td>Olumsuz geri bildirim oranı</td><td class="num">≤ %8</td></tr>
+        <tr><td class="id">KP-09</td><td>İşletim el kitabı ve geri alma yordamı tatbik edilmiş</td><td>Belgeli</td></tr>
+        <tr><td class="id">KP-10</td><td>Güvenlik ve uyum onayı alınmış</td><td>CISO imzası</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">18.3</span>Örnek kabul senaryoları</h3>
+  <div class="wide">
+<pre><b>S-01</b>  Yetkisiz erişim
+  Verilen:  Bölge müdürü yalnızca kendi bölgesini görmeye yetkili
+  Yapılan:  "Ege bölgesinin cirosu ne?" sorusu soruluyor
+  Beklenen: Ret; Ege verisi hiçbir biçimde dönmüyor; denetim kaydı yazılıyor
+            <i>ve cevap metni Ege verisinin varlığını ima etmiyor</i>
+
+<b>S-02</b>  Muğlak metrik
+  Verilen:  "Tahsilat performansı" iki onaylı metriğe eşleşiyor
+  Yapılan:  "Marmara'da tahsilat performansı düştü mü?"
+  Beklenen: Cevap üretilmiyor; iki seçenekli netleştirme sorusu geliyor
+
+<b>S-03</b>  Kapsam dışı
+  Yapılan:  "Rakiplerin pazar payı ne oldu?"
+  Beklenen: Net ret + neden; tahmini sayı üretilmiyor
+
+<b>S-04</b>  Takip sorusu
+  Verilen:  Önceki cevap 2026-Q2 net ciro
+  Yapılan:  "Aynısını bölge kırılımıyla göster"
+  Beklenen: Aynı metrik ve dönem korunuyor; yalnızca boyut ekleniyor
+
+<b>S-05</b>  Veri tazeliği
+  Yapılan:  Herhangi bir metrik sorusu
+  Beklenen: Cevap künyesinde kaynak tablonun son yüklenme zamanı görünüyor
+
+<b>S-06</b>  Sorgu zaman aşımı
+  Verilen:  5 yıllık, tam kırılımlı ağır sorgu
+  Beklenen: 30 sn'de kesiliyor; hata değil, daraltma önerisi sunuluyor
+</pre>
+  </div>
+</section>
+
+<section id="s19">
+  <div class="head"><span class="n">19</span><h2>Açık kararlar</h2></div>
+
+  <p class="lead">Aşağıdaki maddeler bilinçli olarak açık bırakılmıştır; her biri bir sahibe ve bir tarihe bağlanmıştır. Onay öncesinde kapatılması gereken tek madde AK-01'dir.</p>
+
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Açık konu</th><th>Seçenekler</th><th>Karar sahibi</th><th>Ne zaman</th></tr></thead>
+      <tbody>
+        <tr><td class="id">AK-01</td><td>Faz 1'in konu alanı</td><td>Satış ve gelir · Tahsilat · Operasyon</td><td>CDO + iş birimi</td><td>Onay toplantısı</td></tr>
+        <tr><td class="id">AK-02</td><td>Sorgu yolu: doğrudan veri ambarı mı, semantik model mi</td><td>A · B · ikisi birlikte</td><td>Veri platformu</td><td>Faz 0 sonu</td></tr>
+        <tr><td class="id">AK-03</td><td>Ana model adayı</td><td>Faz 0'da ölçülecek 3 aday</td><td>Yapay zekâ ekibi + hukuk</td><td>Faz 0 sonu</td></tr>
+        <tr><td class="id">AK-04</td><td>Bağlantı kimliği: kullanıcı kimliği mi, hizmet hesabı + bağlam mı</td><td>Teknik uygunluğa bağlı</td><td>Güvenlik + veri platformu</td><td>Faz 1 H2</td></tr>
+        <tr><td class="id">AK-05</td><td>Hazır ticari ürünle fiyat karşılaştırması yapılacak mı</td><td>Evet · Hayır</td><td>CIO</td><td>Faz 0 içinde</td></tr>
+        <tr><td class="id">AK-06</td><td>Faz 2 donanımı: satın alma mı, mevcut kapasiteden ayırma mı</td><td>Bütçeye bağlı</td><td>CIO + altyapı</td><td>Faz 1 kapısı</td></tr>
+        <tr><td class="id">AK-07</td><td>Soru metinlerinin saklama süresi</td><td>6 ay · 12 ay · kimliksizleştirme</td><td>Uyum + KVKK</td><td>Faz 1 H4</td></tr>
+        <tr><td class="id">AK-08</td><td>Asgari hücre büyüklüğü eşiği (T-05)</td><td>n ≥ 3 · n ≥ 5 · n ≥ 10</td><td>Uyum + veri sahipleri</td><td>Faz 1 H4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box karar">
+    <div class="t">Onay için sorulacak tek soru</div>
+    <p>Bu dokümanın onay toplantısındaki asıl gündemi teknoloji değildir. Sorulması gereken şudur: <strong>Faz 1'in konu alanında 25 metriğin onaylı tanımını 8 hafta içinde üretecek iş birimi sahipliği var mı?</strong> Cevap evetse proje başlar. Hayırsa proje yine başlayabilir — ama adı "yönetici asistanı" değil, "metrik tanım programı" olur ve asistan onun ikinci fazıdır.</p>
+  </div>
+</section>
+
+<section id="s20">
+  <div class="head"><span class="n">20</span><h2>Ekler ve sözlük</h2></div>
+
+  <h3><span class="n">20.1</span>Terimler</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Terim</th><th>Bu dokümandaki anlamı</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Anlam sözleşmesi</strong></td><td>Metrik kaydı, boyut kataloğu, eşanlamlı sözlüğü ve boyut değer indeksinin bütünü; sistemin doğruluk kaynağı (§6)</td></tr>
+        <tr><td><strong>Sorgu spesifikasyonu</strong></td><td>Modelin ürettiği, şema ile kısıtlı JSON yapı; SQL'in kendisi değil, tarifi (§7.2)</td></tr>
+        <tr><td><strong>Altın soru kümesi</strong></td><td>Beklenen sonucu önceden bilinen, değerlendirme için kullanılan soru derlemesi (§10.1)</td></tr>
+        <tr><td><strong>Yürütme doğruluğu</strong></td><td>Üretilen sorgunun sonucunun referans sonuçla aynı olması; sorgu metninin benzerliği değil</td></tr>
+        <tr><td><strong>Doğru reddetme</strong></td><td>Cevaplanmaması gereken bir soruyu gerekçeyle reddetme oranı</td></tr>
+        <tr><td><strong>Ön-dolum</strong></td><td>Modelin girdi bağlamını işlediği ilk aşama; CPU'da bağlam uzunluğuyla doğrusal artar</td></tr>
+        <tr><td><strong>Uzman karışımı (MoE)</strong></td><td>Her token için parametrelerin yalnızca bir bölümünün kullanıldığı model mimarisi; CPU çıkarımının anahtarı (§5.1)</td></tr>
+        <tr><td><strong>Nicemleme</strong></td><td>Model ağırlıklarının daha az bitle saklanması; bellekten okunan hacmi düşürür</td></tr>
+        <tr><td><strong>KV önbelleği</strong></td><td>Üretim sırasında yeniden hesaplamayı önleyen ara durum belleği</td></tr>
+        <tr><td><strong>Satır düzeyi güvenlik</strong></td><td>Kullanıcının yalnızca yetkili olduğu satırları görmesini veri katmanında sağlayan mekanizma</td></tr>
+        <tr><td><strong>Asgari hücre kuralı</strong></td><td>Toplulaştırmada birey çıkarımını önlemek için sonucun maskelendiği alt sınır (T-05)</td></tr>
+        <tr><td><strong>Şablon</strong></td><td>Parametreli, önceden doğrulanmış sorgu kalıbı; modele hiç uğramadan çalışabilir (§7.4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">20.2</span>Karar kaydı</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Kod</th><th>Karar</th><th>Bölüm</th></tr></thead>
+      <tbody>
+        <tr><td class="id">D-05</td><td>Ana model uzman karışımı mimaride ve 4-bit nicemlenmiş olacaktır; yoğun 30B+ modeller aday değildir</td><td>§5.4</td></tr>
+        <tr><td class="id">D-06</td><td>Metrik kaydı tek doğruluk kaynağıdır; kayıtta olmayan metrik sorgulanamaz</td><td>§6.3</td></tr>
+        <tr><td class="id">D-07</td><td>Sorgu üretimi kısıtlı spesifikasyon üzerinden yapılır; serbest SQL üretimi üretime alınmaz</td><td>§7.1</td></tr>
+        <tr><td class="id">D-08</td><td>Tek akıl yürütücü model + deterministik yardımcılar; çok ajanlı tasarım reddedilmiştir</td><td>§8.3</td></tr>
+        <tr><td class="id">D-10</td><td>Faz geçişi ölçüm eşiğine bağlıdır: doğruluk %80, doğru reddetme %90</td><td>§10.2</td></tr>
+        <tr><td class="id">D-14</td><td>İnce ayar Faz 3'ten önce gündeme alınmaz</td><td>§14.4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3><span class="n">20.3</span>Bu dokümanın kapsamadıkları</h3>
+  <ul class="tight">
+    <li>Ayrıntılı arayüz tasarımı ve ekran akışları — ayrı bir tasarım dokümanının konusu.</li>
+    <li>Kesin bütçe ve tedarik kalemleri — donanım seçimi AK-06 ile kapandıktan sonra çıkarılır.</li>
+    <li>Metrik tanımlarının kendisi — bunlar veri yönetişimi kaydında yaşar, spesifikasyonda değil.</li>
+    <li>Konteyner ve ağ yapılandırmalarının satır düzeyi ayrıntısı — işletim el kitabına aittir.</li>
+    <li>Model adayı listesi — Faz 0 ölçüm raporunun çıktısıdır; burada sabitlenmesi dokümanı erken eskitir.</li>
+  </ul>
+
+  <h3><span class="n">20.4</span>Sürüm geçmişi</h3>
+  <div class="wide scroll">
+    <table>
+      <thead><tr><th>Sürüm</th><th>Tarih</th><th>Değişiklik</th></tr></thead>
+      <tbody>
+        <tr><td class="id">0.9</td><td class="num">28.08.2026</td><td>İnceleme için ilk tam sürüm; §14 uçtan uca değerlendirme ve §19 açık kararlar dahil</td></tr>
+        <tr><td class="id">1.0</td><td>—</td><td>Onay toplantısı sonrası; AK-01 kapatılmış ve Faz 0 ölçümleri eklenmiş olarak beklenir</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr>
+<footer>
+  <p><strong>ONPREM-YZ-SPEC-001 · v0.9</strong> — Kapalı Devre Yönetici Asistanı. Veri &amp; Yapay Zekâ Platformu tarafından inceleme için hazırlanmıştır. Bu doküman bir tasarım taahhüdüdür, bir ürün vaadi değildir: içindeki her sayısal hedef §10'daki ölçüm hattıyla doğrulanana kadar varsayım olarak okunmalıdır.</p>
+</footer>
+
+</main>
+</div>
+</div>
+
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var secs = Array.prototype.slice.call(document.querySelectorAll('main section'));
+  if (!secs.length || !('IntersectionObserver' in window)) return;
+  var current = null;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var a = map[e.target.id];
+      if (!a || a === current) return;
+      if (current) { current.style.background = ''; current.style.color = ''; }
+      a.style.background = 'var(--accent-soft)';
+      a.style.color = 'var(--accent-ink)';
+      current = a;
+    });
+  }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+  secs.forEach(function (s) { io.observe(s); });
+})();
+</script>

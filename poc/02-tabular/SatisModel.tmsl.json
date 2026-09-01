@@ -1,0 +1,222 @@
+{
+  "createOrReplace": {
+    "object": { "database": "POC_Satis" },
+    "database": {
+      "name": "POC_Satis",
+      "compatibilityLevel": 1600,
+      "model": {
+        "culture": "tr-TR",
+        "sourceQueryCulture": "tr-TR",
+        "description": "POC · Satış semantik modeli. TEK analitik kaynak: hem ajan hem raporlar buradan okur. Yıldız şema — 1 detay olgu, 1 özet olgu, 4 boyut.",
+
+        "dataSources": [
+          {
+            "type": "provider",
+            "name": "SqlServer localhost POC_SatisYZ",
+            "description": "Şirket içi SQL Server · salt okunur. Servis hesabı db_datareader üyesidir.",
+            "connectionString": "Provider=MSOLEDBSQL;Data Source=localhost;Initial Catalog=POC_SatisYZ;Integrated Security=SSPI;TrustServerCertificate=true",
+            "impersonationMode": "impersonateServiceAccount"
+          }
+        ],
+
+        "tables": [
+          {
+            "name": "Donem",
+            "description": "Dönem boyutu — 10 ay.",
+            "columns": [
+              { "name": "DonemKey", "dataType": "int64", "sourceColumn": "DonemKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "Dönem", "dataType": "string", "sourceColumn": "DonemAd", "summarizeBy": "none", "sortByColumn": "DonemKey" },
+              { "name": "Yıl", "dataType": "int64", "sourceColumn": "Yil", "summarizeBy": "none" },
+              { "name": "Ay No", "dataType": "int64", "sourceColumn": "Ay", "isHidden": true, "summarizeBy": "none" },
+              { "name": "Ay", "dataType": "string", "sourceColumn": "AyAd", "summarizeBy": "none", "sortByColumn": "Ay No" },
+              { "name": "Dönem Başlangıç", "dataType": "dateTime", "sourceColumn": "DonemBaslangic", "formatString": "dd.MM.yyyy", "summarizeBy": "none" },
+              {
+                "type": "calculated",
+                "name": "Sıra",
+                "dataType": "int64",
+                "isHidden": true,
+                "summarizeBy": "none",
+                "expression": "RANKX ( ALL ( Donem[DonemKey] ), Donem[DonemKey], , ASC, DENSE )"
+              }
+            ],
+            "partitions": [
+              {
+                "name": "Donem",
+                "mode": "import",
+                "source": {
+                  "type": "query",
+                  "dataSource": "SqlServer localhost POC_SatisYZ",
+                  "query": "SELECT DonemKey, Yil, Ay, AyAd, DonemAd, DonemBaslangic FROM dbo.DimDonem"
+                }
+              }
+            ]
+          },
+
+          {
+            "name": "Bolge",
+            "description": "Bölge boyutu.",
+            "columns": [
+              { "name": "BolgeKey", "dataType": "int64", "sourceColumn": "BolgeKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "Bölge", "dataType": "string", "sourceColumn": "BolgeAd", "summarizeBy": "none" },
+              { "name": "Bölge Kodu", "dataType": "string", "sourceColumn": "BolgeKod", "isHidden": true, "summarizeBy": "none" }
+            ],
+            "partitions": [
+              {
+                "name": "Bolge",
+                "mode": "import",
+                "source": { "type": "query", "dataSource": "SqlServer localhost POC_SatisYZ",
+                            "query": "SELECT BolgeKey, BolgeAd, BolgeKod FROM dbo.DimBolge" }
+              }
+            ]
+          },
+
+          {
+            "name": "UrunGrubu",
+            "description": "Ürün grubu boyutu.",
+            "columns": [
+              { "name": "UrunGrubuKey", "dataType": "int64", "sourceColumn": "UrunGrubuKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "Ürün Grubu", "dataType": "string", "sourceColumn": "UrunGrubuAd", "summarizeBy": "none" },
+              { "name": "Kategori", "dataType": "string", "sourceColumn": "Kategori", "summarizeBy": "none" }
+            ],
+            "partitions": [
+              {
+                "name": "UrunGrubu",
+                "mode": "import",
+                "source": { "type": "query", "dataSource": "SqlServer localhost POC_SatisYZ",
+                            "query": "SELECT UrunGrubuKey, UrunGrubuAd, Kategori FROM dbo.DimUrunGrubu" }
+              }
+            ]
+          },
+
+          {
+            "name": "Kanal",
+            "description": "Satış kanalı boyutu.",
+            "columns": [
+              { "name": "KanalKey", "dataType": "int64", "sourceColumn": "KanalKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "Kanal", "dataType": "string", "sourceColumn": "KanalAd", "summarizeBy": "none" }
+            ],
+            "partitions": [
+              {
+                "name": "Kanal",
+                "mode": "import",
+                "source": { "type": "query", "dataSource": "SqlServer localhost POC_SatisYZ",
+                            "query": "SELECT KanalKey, KanalAd FROM dbo.DimKanal" }
+              }
+            ]
+          },
+
+          {
+            "name": "Satis",
+            "description": "Detay satış olgusu — dönem × bölge × ürün grubu × kanal. Tüm tutar ölçüleri buradan gelir; böylece her kırılım aynı ölçüyle hesaplanır.",
+            "columns": [
+              { "name": "DonemKey", "dataType": "int64", "sourceColumn": "DonemKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "BolgeKey", "dataType": "int64", "sourceColumn": "BolgeKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "UrunGrubuKey", "dataType": "int64", "sourceColumn": "UrunGrubuKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "KanalKey", "dataType": "int64", "sourceColumn": "KanalKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "NetCiro", "dataType": "decimal", "sourceColumn": "NetCiro", "isHidden": true, "summarizeBy": "sum" },
+              { "name": "SatisAdet", "dataType": "int64", "sourceColumn": "SatisAdet", "isHidden": true, "summarizeBy": "sum" },
+              { "name": "HedefTutar", "dataType": "decimal", "sourceColumn": "Hedef", "isHidden": true, "summarizeBy": "sum" }
+            ],
+
+            "measures": [
+              { "name": "Net Ciro", "expression": "SUM ( Satis[NetCiro] )", "formatString": "#,0 \"TL\"", "displayFolder": "01 Temel",
+                "description": "İade ve iskontolar düşülmüş, KDV hariç satış tutarı (TRY)." },
+              { "name": "Satış Adet", "expression": "SUM ( Satis[SatisAdet] )", "formatString": "#,0", "displayFolder": "01 Temel",
+                "description": "Satılan ürün adedi." },
+              { "name": "Ortalama Sepet", "expression": "DIVIDE ( [Net Ciro], [Satış Adet] )", "formatString": "#,0 \"TL\"", "displayFolder": "01 Temel",
+                "description": "Net Ciro / Satış Adet (TRY)." },
+
+              { "name": "Hedef", "expression": "SUM ( Satis[HedefTutar] )", "formatString": "#,0 \"TL\"", "displayFolder": "02 Hedef",
+                "description": "Onaylı bütçe hedefi (TRY)." },
+              { "name": "Hedef Gerçekleşme %", "expression": "DIVIDE ( [Net Ciro], [Hedef] )", "formatString": "0.0%", "displayFolder": "02 Hedef",
+                "description": "Net Ciro / Hedef. 1,00 = hedef tam tutmuş." },
+              { "name": "Hedef Sapma", "expression": "[Net Ciro] - [Hedef]", "formatString": "#,0 \"TL\"", "displayFolder": "02 Hedef",
+                "description": "Net Ciro - Hedef (TRY). Negatif = hedefin altında." },
+              { "name": "Hedefi Tutan Ay Sayısı",
+                "expression": "COUNTROWS ( FILTER ( VALUES ( Donem[Dönem] ), [Net Ciro] >= [Hedef] ) )",
+                "formatString": "#,0", "displayFolder": "02 Hedef",
+                "description": "Net Cironun Hedefe eşit veya üstünde olduğu dönem sayısı." },
+
+              { "name": "Önceki Ay Ciro",
+                "expression": "VAR s = SELECTEDVALUE ( Donem[Sıra] ) RETURN CALCULATE ( [Net Ciro], FILTER ( ALL ( Donem ), Donem[Sıra] = s - 1 ) )",
+                "formatString": "#,0 \"TL\"", "displayFolder": "03 Karşılaştırma",
+                "description": "Bir önceki dönemin Net Cirosu (TRY)." },
+              { "name": "Aylık Değişim %",
+                "expression": "DIVIDE ( [Net Ciro] - [Önceki Ay Ciro], [Önceki Ay Ciro] )",
+                "formatString": "+0.0%;-0.0%;0.0%", "displayFolder": "03 Karşılaştırma",
+                "description": "(Net Ciro - Önceki Ay Ciro) / Önceki Ay Ciro." },
+              { "name": "Kümülatif Ciro",
+                "expression": "VAR s = MAX ( Donem[Sıra] ) RETURN CALCULATE ( [Net Ciro], FILTER ( ALL ( Donem ), Donem[Sıra] <= s ) )",
+                "formatString": "#,0 \"TL\"", "displayFolder": "03 Karşılaştırma",
+                "description": "En eski dönemden itibaren birikimli Net Ciro (TRY)." },
+
+              { "name": "Ortalama Aylık Ciro",
+                "expression": "AVERAGEX ( VALUES ( Donem[Dönem] ), [Net Ciro] )",
+                "formatString": "#,0 \"TL\"", "displayFolder": "04 Uç değer",
+                "description": "Seçili dönemlerin aylık Net Ciro ortalaması (TRY)." },
+              { "name": "En Yüksek Ay Cirosu",
+                "expression": "MAXX ( VALUES ( Donem[Dönem] ), [Net Ciro] )",
+                "formatString": "#,0 \"TL\"", "displayFolder": "04 Uç değer",
+                "description": "Seçili kapsamdaki en yüksek aylık Net Ciro (TRY)." },
+              { "name": "En Yüksek Ay",
+                "expression": "VAR t = ADDCOLUMNS ( VALUES ( Donem[Dönem] ), \"@c\", [Net Ciro] ) RETURN MAXX ( TOPN ( 1, t, [@c], DESC ), Donem[Dönem] )",
+                "displayFolder": "04 Uç değer",
+                "description": "En yüksek Net Ciroya sahip dönemin adı." }
+            ],
+
+            "partitions": [
+              {
+                "name": "Satis",
+                "mode": "import",
+                "source": {
+                  "type": "query",
+                  "dataSource": "SqlServer localhost POC_SatisYZ",
+                  "query": "SELECT DonemKey, BolgeKey, UrunGrubuKey, KanalKey, NetCiro, SatisAdet, Hedef FROM dbo.FactSatisDetay"
+                }
+              }
+            ]
+          },
+
+          {
+            "name": "SatisOzet",
+            "description": "Aylık özet — 10 kayıt. Yalnızca detaya dağıtılmamış ölçüyü (müşteri sayısı) taşır.",
+            "isHidden": true,
+            "columns": [
+              { "name": "DonemKey", "dataType": "int64", "sourceColumn": "DonemKey", "isHidden": true, "summarizeBy": "none" },
+              { "name": "MusteriSayisi", "dataType": "int64", "sourceColumn": "MusteriSayisi", "isHidden": true, "summarizeBy": "sum" }
+            ],
+            "measures": [
+              { "name": "Müşteri Sayısı", "expression": "SUM ( SatisOzet[MusteriSayisi] )", "formatString": "#,0", "displayFolder": "01 Temel",
+                "description": "Dönem içinde alışveriş yapan tekil müşteri sayısı. Detaya dağıtılmaz; yalnızca dönem kırılımında anlamlıdır." }
+            ],
+            "partitions": [
+              {
+                "name": "SatisOzet",
+                "mode": "import",
+                "source": { "type": "query", "dataSource": "SqlServer localhost POC_SatisYZ",
+                            "query": "SELECT DonemKey, MusteriSayisi FROM dbo.SatisOzet" }
+              }
+            ]
+          }
+        ],
+
+        "relationships": [
+          { "name": "Satis_Donem",     "fromTable": "Satis",     "fromColumn": "DonemKey",     "toTable": "Donem",     "toColumn": "DonemKey" },
+          { "name": "Satis_Bolge",     "fromTable": "Satis",     "fromColumn": "BolgeKey",     "toTable": "Bolge",     "toColumn": "BolgeKey" },
+          { "name": "Satis_UrunGrubu", "fromTable": "Satis",     "fromColumn": "UrunGrubuKey", "toTable": "UrunGrubu", "toColumn": "UrunGrubuKey" },
+          { "name": "Satis_Kanal",     "fromTable": "Satis",     "fromColumn": "KanalKey",     "toTable": "Kanal",     "toColumn": "KanalKey" },
+          { "name": "Ozet_Donem",      "fromTable": "SatisOzet", "fromColumn": "DonemKey",     "toTable": "Donem",     "toColumn": "DonemKey" }
+        ],
+
+        "roles": [
+          {
+            "name": "Yonetici_Okuma",
+            "description": "Salt okunur yönetici rolü. Ajan ve raporlar bu rol üzerinden okur.",
+            "modelPermission": "read",
+            "members": []
+          }
+        ]
+      }
+    }
+  }
+}

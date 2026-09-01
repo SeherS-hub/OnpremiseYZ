@@ -1,0 +1,9 @@
+pythonnet
+pyadomd
+pyodbc
+waitress
+pytest
+
+# Istege bagli — POC_DILBILGISI=zeyrek icin.
+# nltk korpusu ayrica gerekir: python -c "import nltk; nltk.download('punkt_tab')"
+# zeyrek

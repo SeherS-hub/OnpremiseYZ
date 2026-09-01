@@ -1,0 +1,1545 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  POC · Satış Dashboard'u
+  Hedef: Power BI Report Server (PBIRS) veya SQL Server Reporting Services 2019+
+  Kaynak: SSAS Tabular · POC_Satis (tek analitik kaynak, DAX)
+  Özellik: Her satırda "Asistana sor" action'ı, ajanı soru hazır şekilde açar.
+
+  NOT: Bu makinede rapor sunucusu kurulu olmadığı için rapor RENDER EDİLEREK
+  DOĞRULANMAMIŞTIR. Kurulumdan sonra Report Builder ile açıp bir kez
+  önizlemek gerekir; şema 2016 RDL'dir ve PBIRS/SSRS 2019+ ile uyumludur.
+-->
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+  <Description>Satış özeti ve detay kırılımları · yönetici asistanı entegrasyonlu</Description>
+  <Author>Veri &amp; Yapay Zekâ Platformu</Author>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="dsSSAS">
+      <ConnectionProperties>
+        <DataProvider>OLEDB-MD</DataProvider>
+        <ConnectString>Data Source=localhost\TABULAR;Initial Catalog=POC_Satis</ConnectString>
+        <IntegratedSecurity>true</IntegratedSecurity>
+      </ConnectionProperties>
+      <rd:SecurityType>Integrated</rd:SecurityType>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <!-- Dönem parametresinin değer listesi -->
+    <DataSet Name="Donemler">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>EVALUATE
+SELECTCOLUMNS ( Donem, "DonemAd", Donem[Dönem], "DonemKey", Donem[DonemKey] )
+ORDER BY [DonemKey]</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="DonemAd"><DataField>[DonemAd]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="DonemKey"><DataField>[DonemKey]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <!-- Üst KPI şeridi -->
+    <DataSet Name="KPI">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>="EVALUATE" &amp; vbCrLf &amp;
+"VAR __f = FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] IN { """ &amp;
+Join(Parameters!pDonem.Value, """, """) &amp; """ } )" &amp; vbCrLf &amp;
+"RETURN ROW (" &amp; vbCrLf &amp;
+"  ""NetCiro"", CALCULATE ( [Net Ciro], __f )," &amp; vbCrLf &amp;
+"  ""Hedef"", CALCULATE ( [Hedef], __f )," &amp; vbCrLf &amp;
+"  ""SatisAdet"", CALCULATE ( [Satış Adet], __f )," &amp; vbCrLf &amp;
+"  ""MusteriSayisi"", CALCULATE ( [Müşteri Sayısı], __f )" &amp; vbCrLf &amp; ")"</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="NetCiro"><DataField>[NetCiro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Hedef"><DataField>[Hedef]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="SatisAdet"><DataField>[SatisAdet]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+        <Field Name="MusteriSayisi"><DataField>[MusteriSayisi]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <!-- Aylık trend -->
+    <DataSet Name="Trend">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>="EVALUATE" &amp; vbCrLf &amp;
+"SUMMARIZECOLUMNS (" &amp; vbCrLf &amp;
+"  Donem[DonemKey], Donem[Dönem]," &amp; vbCrLf &amp;
+"  FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] IN { """ &amp;
+Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
+"  ""NetCiro"", [Net Ciro]," &amp; vbCrLf &amp;
+"  ""Hedef"", [Hedef]," &amp; vbCrLf &amp;
+"  ""SatisAdet"", [Satış Adet]," &amp; vbCrLf &amp;
+"  ""OncekiAyCiro"", [Önceki Ay Ciro]," &amp; vbCrLf &amp;
+"  ""AylikDegisim"", [Aylık Değişim %]," &amp; vbCrLf &amp;
+"  ""HedefGerceklesme"", [Hedef Gerçekleşme %]" &amp; vbCrLf &amp;
+")" &amp; vbCrLf &amp; "ORDER BY Donem[DonemKey]"</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="DonemKey"><DataField>Donem[DonemKey]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+        <Field Name="DonemAd"><DataField>Donem[Dönem]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="NetCiro"><DataField>[NetCiro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Hedef"><DataField>[Hedef]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="SatisAdet"><DataField>[SatisAdet]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+        <Field Name="OncekiAyCiro"><DataField>[OncekiAyCiro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="AylikDegisim"><DataField>[AylikDegisim]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="HedefGerceklesme"><DataField>[HedefGerceklesme]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <!-- Bölge kırılımı -->
+    <DataSet Name="Bolge">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>="EVALUATE" &amp; vbCrLf &amp;
+"SUMMARIZECOLUMNS (" &amp; vbCrLf &amp;
+"  Bolge[Bölge]," &amp; vbCrLf &amp;
+"  FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] IN { """ &amp;
+Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
+"  ""NetCiro"", [Net Ciro]," &amp; vbCrLf &amp;
+"  ""Hedef"", [Hedef]," &amp; vbCrLf &amp;
+"  ""SatisAdet"", [Satış Adet]," &amp; vbCrLf &amp;
+"  ""HedefGerceklesme"", [Hedef Gerçekleşme %]" &amp; vbCrLf &amp;
+")" &amp; vbCrLf &amp; "ORDER BY [NetCiro] DESC"</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="BolgeAd"><DataField>Bolge[Bölge]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="NetCiro"><DataField>[NetCiro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Hedef"><DataField>[Hedef]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="SatisAdet"><DataField>[SatisAdet]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+        <Field Name="HedefGerceklesme"><DataField>[HedefGerceklesme]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
+    <!-- Ürün grubu × kanal matrisi -->
+    <DataSet Name="UrunKanal">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>="EVALUATE" &amp; vbCrLf &amp;
+"SUMMARIZECOLUMNS (" &amp; vbCrLf &amp;
+"  UrunGrubu[Ürün Grubu], Kanal[Kanal]," &amp; vbCrLf &amp;
+"  FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] IN { """ &amp;
+Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
+"  ""NetCiro"", [Net Ciro]" &amp; vbCrLf &amp; ")"</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="UrunGrubuAd"><DataField>UrunGrubu[Ürün Grubu]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="KanalAd"><DataField>Kanal[Kanal]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="NetCiro"><DataField>[NetCiro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportParameters>
+    <ReportParameter Name="pDonem">
+      <DataType>String</DataType>
+      <Prompt>Dönem</Prompt>
+      <MultiValue>true</MultiValue>
+      <ValidValues>
+        <DataSetReference>
+          <DataSetName>Donemler</DataSetName>
+          <ValueField>DonemAd</ValueField>
+          <LabelField>DonemAd</LabelField>
+        </DataSetReference>
+      </ValidValues>
+      <DefaultValue>
+        <DataSetReference>
+          <DataSetName>Donemler</DataSetName>
+          <ValueField>DonemAd</ValueField>
+        </DataSetReference>
+      </DefaultValue>
+    </ReportParameter>
+    <ReportParameter Name="pAjanUrl">
+      <DataType>String</DataType>
+      <Prompt>Asistan adresi</Prompt>
+      <DefaultValue>
+        <Values>
+          <Value>http://localhost:8787</Value>
+        </Values>
+      </DefaultValue>
+      <Hidden>true</Hidden>
+    </ReportParameter>
+  </ReportParameters>
+  <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <!-- ================= BAŞLIK ================= -->
+          <Textbox Name="txtBaslik">
+            <Top>0in</Top>
+            <Left>0in</Left>
+            <Height>0.34in</Height>
+            <Width>7.4in</Width>
+            <CanGrow>true</CanGrow>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Satış Dashboard'u</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>17pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#141A20</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+          </Textbox>
+          <Textbox Name="txtAltBaslik">
+            <Top>0.36in</Top>
+            <Left>0in</Left>
+            <Height>0.26in</Height>
+            <Width>7.4in</Width>
+            <CanGrow>true</CanGrow>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>="Seçili dönem: " &amp; Join(Parameters!pDonem.Value, ", ") &amp;
+                  "   ·   Kaynak: SSAS · POC_Satis   ·   Üretim: " &amp;
+                  Format(Globals!ExecutionTime, "dd.MM.yyyy HH:mm")</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>8pt</FontSize>
+                      <Color>#74838A</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <PaddingLeft>2pt</PaddingLeft>
+            </Style>
+          </Textbox>
+          <!-- ================= KPI ŞERİDİ ================= -->
+          <Textbox Name="kpiCiro">
+            <Top>0.72in</Top>
+            <Left>0in</Left>
+            <Height>0.72in</Height>
+            <Width>1.75in</Width>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>NET CİRO</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>7pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#74838A</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(First(Fields!NetCiro.Value, "KPI") / 1000000, "#,0.0") &amp; " mn TL"</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>16pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#141A20</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+              <PaddingLeft>8pt</PaddingLeft>
+              <PaddingTop>6pt</PaddingTop>
+            </Style>
+          </Textbox>
+          <Textbox Name="kpiHedef">
+            <Top>0.72in</Top>
+            <Left>1.9in</Left>
+            <Height>0.72in</Height>
+            <Width>1.75in</Width>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>HEDEF GERÇEKLEŞME</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>7pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#74838A</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(First(Fields!NetCiro.Value, "KPI") / First(Fields!Hedef.Value, "KPI"), "0.0%")</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>16pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>=IIf(First(Fields!NetCiro.Value,"KPI") &gt;= First(Fields!Hedef.Value,"KPI"), "#2C6B4C", "#93262B")</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+              <PaddingLeft>8pt</PaddingLeft>
+              <PaddingTop>6pt</PaddingTop>
+            </Style>
+          </Textbox>
+          <Textbox Name="kpiAdet">
+            <Top>0.72in</Top>
+            <Left>3.8in</Left>
+            <Height>0.72in</Height>
+            <Width>1.75in</Width>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>SATIŞ ADEDİ</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>7pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#74838A</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(First(Fields!SatisAdet.Value, "KPI"), "#,0")</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>16pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#141A20</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+              <PaddingLeft>8pt</PaddingLeft>
+              <PaddingTop>6pt</PaddingTop>
+            </Style>
+          </Textbox>
+          <Textbox Name="kpiSepet">
+            <Top>0.72in</Top>
+            <Left>5.65in</Left>
+            <Height>0.72in</Height>
+            <Width>1.75in</Width>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>ORTALAMA SEPET</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>7pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#74838A</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>=Format(First(Fields!NetCiro.Value,"KPI") / First(Fields!SatisAdet.Value,"KPI"), "#,0") &amp; " TL"</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>16pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#141A20</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+              </Paragraph>
+            </Paragraphs>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+              <PaddingLeft>8pt</PaddingLeft>
+              <PaddingTop>6pt</PaddingTop>
+            </Style>
+          </Textbox>
+          <!-- ================= AJANA GİT DÜĞMESİ ================= -->
+          <Textbox Name="btnAsistan">
+            <Top>1.56in</Top>
+            <Left>0in</Left>
+            <Height>0.3in</Height>
+            <Width>7.4in</Width>
+            <Paragraphs>
+              <Paragraph>
+                <TextRuns>
+                  <TextRun>
+                    <Value>Yönetici Asistanına sor  —  sesli veya yazılı  →</Value>
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>9pt</FontSize>
+                      <FontWeight>Bold</FontWeight>
+                      <Color>#FFFFFF</Color>
+                    </Style>
+                  </TextRun>
+                </TextRuns>
+                <Style>
+                  <TextAlign>Center</TextAlign>
+                </Style>
+              </Paragraph>
+            </Paragraphs>
+            <ActionInfo>
+              <Actions>
+                <Action>
+                  <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+            System.Uri.EscapeDataString(
+              IIf(Parameters!pDonem.Count = 1,
+                  Parameters!pDonem.Value(0) &amp; " döneminde hedefi tuttuk mu?",
+                  "Son 10 ayın ortalama aylık cirosu ne?"))</Hyperlink>
+                </Action>
+              </Actions>
+            </ActionInfo>
+            <Style>
+              <BackgroundColor>#1B5C77</BackgroundColor>
+              <VerticalAlign>Middle</VerticalAlign>
+            </Style>
+          </Textbox>
+          <!-- ================= AYLIK TREND GRAFİĞİ ================= -->
+          <Chart Name="chartTrend">
+            <Top>1.98in</Top>
+            <Left>0in</Left>
+            <Height>2.3in</Height>
+            <Width>7.4in</Width>
+            <DataSetName>Trend</DataSetName>
+            <ChartCategoryHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Group Name="grpDonem">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!DonemAd.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!DonemKey.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                  <Label>=Fields!DonemAd.Value</Label>
+                </ChartMember>
+              </ChartMembers>
+            </ChartCategoryHierarchy>
+            <ChartSeriesHierarchy>
+              <ChartMembers>
+                <ChartMember>
+                  <Label>Net Ciro</Label>
+                </ChartMember>
+                <ChartMember>
+                  <Label>Hedef</Label>
+                </ChartMember>
+              </ChartMembers>
+            </ChartSeriesHierarchy>
+            <ChartData>
+              <ChartSeriesCollection>
+                <ChartSeries Name="serCiro">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!NetCiro.Value)/1000000</Y>
+                      </ChartDataPointValues>
+                      <Style>
+                        <BackgroundColor>#1B5C77</BackgroundColor>
+                      </Style>
+                      <ActionInfo>
+                        <Actions>
+                          <Action>
+                            <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+                    System.Uri.EscapeDataString(Fields!DonemAd.Value &amp; " döneminde net ciro ne kadar?")</Hyperlink>
+                          </Action>
+                        </Actions>
+                      </ActionInfo>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Column</Type>
+                  <Subtype>Plain</Subtype>
+                  <ValueAxisName>Birincil</ValueAxisName>
+                  <CategoryAxisName>Kategori</CategoryAxisName>
+                  <ChartAreaName>Alan</ChartAreaName>
+                </ChartSeries>
+                <ChartSeries Name="serHedef">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=Sum(Fields!Hedef.Value)/1000000</Y>
+                      </ChartDataPointValues>
+                      <Style>
+                        <BackgroundColor>#A9541E</BackgroundColor>
+                      </Style>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Line</Type>
+                  <Subtype>Plain</Subtype>
+                  <ValueAxisName>Birincil</ValueAxisName>
+                  <CategoryAxisName>Kategori</CategoryAxisName>
+                  <ChartAreaName>Alan</ChartAreaName>
+                </ChartSeries>
+              </ChartSeriesCollection>
+            </ChartData>
+            <ChartAreas>
+              <ChartArea Name="Alan">
+                <ChartCategoryAxes>
+                  <ChartAxis Name="Kategori">
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>8pt</FontSize>
+                      <Color>#48565D</Color>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption />
+                    </ChartAxisTitle>
+                    <ChartMajorGridLines>
+                      <Enabled>false</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>None</Style>
+                        </Border>
+                      </Style>
+                    </ChartMajorGridLines>
+                    <ChartMinorGridLines>
+                      <Enabled>false</Enabled>
+                      <Style>
+                        <Border>
+                          <Style>None</Style>
+                        </Border>
+                      </Style>
+                    </ChartMinorGridLines>
+                    <ChartMajorTickMarks>
+                      <Enabled>false</Enabled>
+                    </ChartMajorTickMarks>
+                    <ChartMinorTickMarks>
+                      <Enabled>false</Enabled>
+                    </ChartMinorTickMarks>
+                  </ChartAxis>
+                </ChartCategoryAxes>
+                <ChartValueAxes>
+                  <ChartAxis Name="Birincil">
+                    <Style>
+                      <FontFamily>Segoe UI</FontFamily>
+                      <FontSize>8pt</FontSize>
+                      <Color>#48565D</Color>
+                    </Style>
+                    <ChartAxisTitle>
+                      <Caption>milyon TL</Caption>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>7pt</FontSize>
+                        <Color>#74838A</Color>
+                      </Style>
+                    </ChartAxisTitle>
+                    <ChartMajorGridLines>
+                      <Enabled>true</Enabled>
+                      <Style>
+                        <Border>
+                          <Color>#E8EEF0</Color>
+                          <Style>Solid</Style>
+                          <Width>1pt</Width>
+                        </Border>
+                      </Style>
+                    </ChartMajorGridLines>
+                  </ChartAxis>
+                </ChartValueAxes>
+                <Style>
+                  <BackgroundColor>#FFFFFF</BackgroundColor>
+                </Style>
+              </ChartArea>
+            </ChartAreas>
+            <ChartLegends>
+              <ChartLegend Name="Gosterge">
+                <Style>
+                  <Border>
+                    <Style>None</Style>
+                  </Border>
+                  <FontFamily>Segoe UI</FontFamily>
+                  <FontSize>8pt</FontSize>
+                  <Color>#48565D</Color>
+                </Style>
+                <Position>TopCenter</Position>
+                <Layout>Row</Layout>
+              </ChartLegend>
+            </ChartLegends>
+            <ChartTitles>
+              <ChartTitle Name="Baslik">
+                <Caption>Aylık net ciro ve hedef</Caption>
+                <Style>
+                  <FontFamily>Segoe UI</FontFamily>
+                  <FontSize>10pt</FontSize>
+                  <FontWeight>Bold</FontWeight>
+                  <Color>#141A20</Color>
+                </Style>
+                <Position>TopLeft</Position>
+              </ChartTitle>
+            </ChartTitles>
+            <Palette>Custom</Palette>
+            <ChartCustomPaletteColors>
+              <ChartCustomPaletteColor>#1B5C77</ChartCustomPaletteColor>
+              <ChartCustomPaletteColor>#A9541E</ChartCustomPaletteColor>
+            </ChartCustomPaletteColors>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+            </Style>
+          </Chart>
+          <!-- ================= BÖLGE TABLOSU ================= -->
+          <Tablix Name="tblBolge">
+            <Top>4.42in</Top>
+            <Left>0in</Left>
+            <Height>1.5in</Height>
+            <Width>3.6in</Width>
+            <DataSetName>Bolge</DataSetName>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1.3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.15in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.15in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.26in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="hBolge">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>BÖLGE</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="hBolgeCiro">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>NET CİRO</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="hBolgeHedef">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>GERÇEKLEŞME</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.24in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="dBolge">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!BolgeAd.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <TextDecoration>Underline</TextDecoration>
+                                    <Color>#134253</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <ActionInfo>
+                            <Actions>
+                              <Action>
+                                <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+                        System.Uri.EscapeDataString(Fields!BolgeAd.Value &amp; " bölgesinin cirosu ne kadar?")</Hyperlink>
+                              </Action>
+                            </Actions>
+                          </ActionInfo>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="dBolgeCiro">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!NetCiro.Value/1000000, "#,0.0") &amp; " mn"</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#141A20</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="dBolgeHedef">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!HedefGerceklesme.Value, "0.0%")</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>=IIf(Fields!HedefGerceklesme.Value &gt;= 1, "#2C6B4C", "#93262B")</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="grpBolge">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!BolgeAd.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Sum(Fields!NetCiro.Value)</Value>
+                      <Direction>Descending</Direction>
+                    </SortExpression>
+                  </SortExpressions>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+            </Style>
+          </Tablix>
+          <!-- ================= ÜRÜN × KANAL MATRİSİ ================= -->
+          <Tablix Name="mtxUrunKanal">
+            <Top>4.42in</Top>
+            <Left>3.72in</Left>
+            <Height>1.5in</Height>
+            <Width>3.45in</Width>
+            <DataSetName>UrunKanal</DataSetName>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1.45in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>0.66in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.42in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="hUrun">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>ÜRÜN GRUBU</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="hKanal">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!KanalAd.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>4pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.24in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="dUrun">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!UrunGrubuAd.Value</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <TextDecoration>Underline</TextDecoration>
+                                    <Color>#134253</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <ActionInfo>
+                            <Actions>
+                              <Action>
+                                <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+                        System.Uri.EscapeDataString("En çok ciro yapan 3 ürün grubu hangileri?")</Hyperlink>
+                              </Action>
+                            </Actions>
+                          </ActionInfo>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="dDeger">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Sum(Fields!NetCiro.Value)/1000000, "#,0.0")</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#141A20</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>4pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember>
+                  <Group Name="grpKanal">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!KanalAd.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!KanalAd.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                </TablixMember>
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="grpUrun">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!UrunGrubuAd.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Sum(Fields!NetCiro.Value)</Value>
+                      <Direction>Descending</Direction>
+                    </SortExpression>
+                  </SortExpressions>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+            </Style>
+          </Tablix>
+          <!-- ================= AYLIK DETAY TABLOSU ================= -->
+          <Tablix Name="tblTrend">
+            <Top>5.10in</Top>
+            <Left>0in</Left>
+            <Height>1.4in</Height>
+            <Width>7.4in</Width>
+            <DataSetName>Trend</DataSetName>
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>1.1in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.3in</Width>
+                </TablixColumn>
+                <TablixColumn>
+                  <Width>1.2in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>0.26in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH1">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>DÖNEM</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH2">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>NET CİRO</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH3">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>HEDEF</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH4">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>GERÇEKLEŞME</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH5">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>AYLIK DEĞİŞİM</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tH6">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>ASİSTAN</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>7pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>#74838A</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <BackgroundColor>#E8EEF0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>0.24in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD1">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Fields!DonemAd.Value</Value>
+                                  <Style>
+                                    <FontFamily>Consolas</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#141A20</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>5pt</PaddingLeft>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD2">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!NetCiro.Value/1000000, "#,0.0") &amp; " mn"</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#141A20</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD3">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!Hedef.Value/1000000, "#,0.0") &amp; " mn"</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>#48565D</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD4">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=Format(Fields!HedefGerceklesme.Value, "0.0%")</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <Color>=IIf(Fields!HedefGerceklesme.Value &gt;= 1, "#2C6B4C", "#93262B")</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD5">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>=IIf(IsNothing(Fields!AylikDegisim.Value), "—", Format(Fields!AylikDegisim.Value, "+0.0%;-0.0%"))</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>9pt</FontSize>
+                                    <Color>=IIf(IsNothing(Fields!AylikDegisim.Value), "#74838A", IIf(Fields!AylikDegisim.Value &gt;= 0, "#2C6B4C", "#93262B"))</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Right</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingRight>5pt</PaddingRight>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="tD6">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs>
+                            <Paragraph>
+                              <TextRuns>
+                                <TextRun>
+                                  <Value>sor →</Value>
+                                  <Style>
+                                    <FontFamily>Segoe UI</FontFamily>
+                                    <FontSize>8pt</FontSize>
+                                    <FontWeight>Bold</FontWeight>
+                                    <TextDecoration>Underline</TextDecoration>
+                                    <Color>#134253</Color>
+                                  </Style>
+                                </TextRun>
+                              </TextRuns>
+                              <Style>
+                                <TextAlign>Center</TextAlign>
+                              </Style>
+                            </Paragraph>
+                          </Paragraphs>
+                          <ActionInfo>
+                            <Actions>
+                              <Action>
+                                <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+                      System.Uri.EscapeDataString(Fields!DonemAd.Value &amp; " döneminde hedefi tuttuk mu?")</Hyperlink>
+                              </Action>
+                            </Actions>
+                          </ActionInfo>
+                          <Style>
+                            <VerticalAlign>Middle</VerticalAlign>
+                          </Style>
+                        </Textbox>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <KeepWithGroup>After</KeepWithGroup>
+                </TablixMember>
+                <TablixMember>
+                  <Group Name="grpTrendDonem">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!DonemAd.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression>
+                      <Value>=Fields!DonemKey.Value</Value>
+                    </SortExpression>
+                  </SortExpressions>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <Style>
+              <Border>
+                <Color>#D2DBDF</Color>
+                <Style>Solid</Style>
+                <Width>1pt</Width>
+              </Border>
+              <BackgroundColor>#FFFFFF</BackgroundColor>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>8.62in</Height>
+        <Style>
+          <BackgroundColor>#F2F5F6</BackgroundColor>
+        </Style>
+      </Body>
+      <Width>7.5in</Width>
+      <Page>
+        <PageFooter>
+          <ReportItems>
+            <Textbox Name="txtFooter">
+              <Top>0.04in</Top>
+              <Left>0in</Left>
+              <Height>0.22in</Height>
+              <Width>7.4in</Width>
+              <Paragraphs>
+                <Paragraph>
+                  <TextRuns>
+                    <TextRun>
+                      <Value>="POC · Satış Dashboard'u   ·   metrik tanımları onaylı metrik kaydından gelir   ·   sayfa " &amp; Globals!PageNumber &amp; "/" &amp; Globals!TotalPages</Value>
+                      <Style>
+                        <FontFamily>Segoe UI</FontFamily>
+                        <FontSize>7pt</FontSize>
+                        <Color>#74838A</Color>
+                      </Style>
+                    </TextRun>
+                  </TextRuns>
+                </Paragraph>
+              </Paragraphs>
+            </Textbox>
+          </ReportItems>
+          <Height>0.3in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+        </PageFooter>
+        <PageHeight>11in</PageHeight>
+        <PageWidth>8.5in</PageWidth>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.5in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.5in</BottomMargin>
+      </Page>
+    </ReportSection>
+  </ReportSections>
+</Report>

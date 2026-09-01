@@ -1,0 +1,14 @@
+{
+  "createOrReplace": {
+    "object": { "database": "POC_Satis", "role": "Yonetici_Okuma" },
+    "role": {
+      "name": "Yonetici_Okuma",
+      "description": "Salt okunur okuma rolü. Raporlar ve ajan bu rol üzerinden okur. Rapor sunucusu modele kendi servis hesabıyla bağlanır; o hesap burada olmazsa rapor render'ı 500 ile düşer.",
+      "modelPermission": "read",
+      "members": [
+        { "memberName": "NT SERVICE\\SQLServerReportingServices" },
+        { "memberName": "LENOVO\\sehers" }
+      ]
+    }
+  }
+}

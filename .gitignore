@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Ajan calisma zamani ciktilari — denetim kaydinin ASIL yeri SQL Server
+# (denetim.AjanKayit). Buradaki dosyalar ikincil kopya ve makineye ozgu.
+poc/04-ajan-py/denetim/
+
+# Uretilen sozlesme iskeleti — kaynak degil, arac ciktisi
+poc/04-ajan-py/lib/sozlesme_iskelet.py
+poc/04-ajan-py/lib/sozlesme_yeni.py
+
+# Gecici
+*.tmp
+*.bak
+*.yedek
