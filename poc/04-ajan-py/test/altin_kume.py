@@ -122,6 +122,35 @@ KUME = [
     (19, 'Marmara bölgesinin cirosu ne kadar?',
      lambda s, y=None: s['durum'] == 'ok' and y and 'Bölge = Marmara' in y['metin'],
      'REGRESYON · uygulanan filtre CEVAPTA görünmeli; yoksa toplam sanılır'),
+
+    # --- İLERİ ANALİZ · tahmin, projeksiyon, katkı ---
+    # Bu dördü eskiden REDDEDİLİYORDU. Testler yalnız "cevap verdi mi"
+    # değil, DÜRÜSTLÜK KAPILARININ durduğunu da doğruluyor.
+
+    (20, 'Gelecek ay ciro ne olur',
+     lambda s, y=None: s['durum'] == 'ok' and s.get('ozel') == 'tahmin',
+     'İLERİ · tahmin niyeti tanınmalı (eskiden kapsam dışıydı)'),
+
+    (21, 'Yıl sonunda hedefe ulaşır mıyız',
+     lambda s, y=None: s['durum'] == 'ok' and s.get('ozel') == 'yil_sonu',
+     'İLERİ · yıl sonu projeksiyonu; tahmin regresyonuna KAYMAMALI'),
+
+    (22, 'Ciro neden düştü',
+     lambda s, y=None: s['durum'] == 'ok' and s.get('ozel') == 'katki'
+     and s.get('katkiBoyut') == 'bolge',
+     'İLERİ · katkı ayrıştırması; nedensellik reddi yerine hesap'),
+
+    (23, 'Ciro düşüşü adetten mi sepetten mi',
+     lambda s, y=None: s['durum'] == 'ok' and s.get('ozel') == 'hacim_sepet',
+     'İLERİ · hacim × sepet cebirsel ayrıştırması'),
+
+    (24, 'Fiyatı %10 artırsak ne olur',
+     lambda s, y=None: s['durum'] == 'kapsam_disi',
+     'SINIR · senaryo modelleme hâlâ kapsam dışı; karşı-olgusal veri yok'),
+
+    (25, 'Ağustos düşüşü neden',
+     lambda s, y=None: s['durum'] == 'netlestir' and len(s.get('secenekler') or []) >= 2,
+     'İLERİ · niyet anlaşıldı ama ölçü yok → düz ret değil, SOR'),
 ]
 
 

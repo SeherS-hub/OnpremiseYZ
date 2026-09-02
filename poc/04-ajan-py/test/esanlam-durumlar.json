@@ -1,4 +1,4 @@
-﻿[
+[
  [
   "net ciro — farklı söyleyişler",
   [
@@ -345,8 +345,9 @@
    {
     "s": "gelecek ay ciro ne olur",
     "b": {
-     "durum": "kapsam_disi"
-    }
+     "durum": "ok"
+    },
+    "not": "lib/tahmin.py eklenince kapsama girdi; eğilim yoksa tahmin üretmeyip ortalama seviye bildiriyor."
    },
    {
     "s": "stok durumu nedir",
@@ -386,6 +387,66 @@
    },
    {
     "s": "Kurumsal satışta müşteri sayısı",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   }
+  ]
+ ],
+ [
+  "ileri analiz — tahmin, projeksiyon, katkı",
+  [
+   {
+    "s": "önümüzdeki 3 ayın ciro tahmini",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "ciro öngörüsü nedir",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "yıl sonunu nasıl kapatırız",
+    "b": {
+     "durum": "netlestir"
+    },
+    "not": "Cümlede ölçü adı YOK. Ajan varsaymak yerine soruyor — \"nasıl kapatırız\" ciro da olabilir adet de. Varsaymak kolaylık sağlar ama sessiz yanlış cevap riski açar."
+   },
+   {
+    "s": "yıl sonu ciro projeksiyonu",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "ciro neden düştü",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "ciro düşüşü nereden geldi",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "ciro değişimi adetten mi sepetten mi",
+    "b": {
+     "durum": "ok"
+    }
+   },
+   {
+    "s": "Fiyatı %10 artırsak ne olur",
+    "b": {
+     "durum": "kapsam_disi"
+    }
+   },
+   {
+    "s": "indirim yapsak ciro ne olur",
     "b": {
      "durum": "kapsam_disi"
     }

@@ -274,6 +274,63 @@ SAYI_ADLARI = {'bir': 1, 'iki': 2, 'uc': 3, 'dort': 4, 'bes': 5,
 DONEM_KELIMELERI = ['ay', 'ayin', 'aylik', 'yil', 'yilin', 'yillik', 'donem', 'donemin']
 
 
+# --------------------------------------------------------------------
+# İleri analiz niyetleri — tahmin, projeksiyon, katkı
+#
+# Bu dördü eskiden REDDEDİLİYORDU: tahmin KAPSAM_DISI'ndaydı, "neden"
+# soruları da netleştirmeye düşüyordu. Ret gerekçeleri hâlâ geçerli;
+# değişen şey reddetmek yerine BELİRSİZLİĞİ VE SINIRI birlikte vermek.
+# Hesabın kendisi lib/tahmin.py ve lib/katki.py içinde, dürüstlük
+# kapıları da orada.
+# --------------------------------------------------------------------
+TAHMIN_ISARETLERI = ['tahmin', 'ongoru', 'ne olur', 'ne olacak', 'bekleniyor',
+                     'beklenti', 'gelecek ay', 'gelecek donem', 'onumuzdeki',
+                     'forecast', 'kestirim', 'projeksiyon']
+YIL_SONU_ISARETLERI = ['yil sonu', 'yil sonunda', 'yili nasil kapat',
+                       'yil sonuna', 'seneyi nasil kapat', 'yil sonu itibariyla',
+                       'hedefe ulasir mi', 'hedefi tutar mi', 'yil sonu hedef']
+KATKI_ISARETLERI = ['neden', 'nicin', 'niye', 'sebebi', 'sebep', 'kaynaklaniyor',
+                    'katki', 'katkisi', 'hangisi cekti', 'kim cekti',
+                    'nereden geldi', 'ne kadarini']
+HACIM_SEPET_ISARETLERI = ['adetten mi', 'fiyattan mi', 'hacim mi', 'sepet mi',
+                          'adet mi', 'adetten mi sepetten mi', 'birim fiyattan mi',
+                          'hacimden mi']
+
+_SAYI_UFUK = {'bir': 1, 'iki': 2, 'uc': 3, 'dort': 4, 'bes': 5, 'alti': 6}
+
+
+def _ufuk_coz(metin):
+    """'önümüzdeki 3 ay' → 3. Bulunamazsa 1."""
+    t = dil.belirtecler(metin)
+    for i, k in enumerate(t):
+        sonraki = t[i + 1] if i + 1 < len(t) else ''
+        if sonraki not in ('ay', 'ayin', 'aylik', 'donem', 'donemin'):
+            continue
+        if k.isdigit() and len(k) < 3:
+            return int(k)
+        if k in _SAYI_UFUK:
+            return _SAYI_UFUK[k]
+    return 1
+
+
+def ileri_niyet(metin, cozum):
+    """Dönen: None ya da {'ozel': ..., 'ufuk': ...}
+
+    Sıra önemli: yıl sonu, tahmin işaretlerinden ÖNCE bakılır. "Yıl sonu
+    ne olur" ikisine de uyuyor ama doğru cevap koşu hızı projeksiyonudur —
+    regresyonla 4 ay ileri gitmek zaten ufuk sınırına takılırdı.
+    """
+    if any(icerir(metin, i) for i in YIL_SONU_ISARETLERI):
+        return {'ozel': 'yil_sonu'}
+    if any(icerir(metin, i) for i in HACIM_SEPET_ISARETLERI):
+        return {'ozel': 'hacim_sepet'}
+    if any(icerir(metin, i) for i in TAHMIN_ISARETLERI):
+        return {'ozel': 'tahmin', 'ufuk': _ufuk_coz(metin)}
+    if any(icerir(metin, i) for i in KATKI_ISARETLERI):
+        return {'ozel': 'katki'}
+    return None
+
+
 def siralama_coz(metin):
     en_cok = (icerir(metin, 'en cok') or icerir(metin, 'en yuksek')
               or icerir(metin, 'en fazla') or icerir(metin, 'en iyi')
@@ -378,31 +435,34 @@ def planla(soru):
         spec['guven'] = 0.4
         return spec
 
-    # --- 2b) nedensellik sorusu ---
-    # "Neden düştü?" sorusuna toplam ciro basmak, yanlış soruya doğru cevap
-    # vermektir. Sistem nedensellik iddia etmez.
-    neden = any(icerir(m, d) for d in
-                ['neden', 'nicin', 'niye', 'sebebi', 'sebep', 'kaynaklaniyor'])
-    if neden and not boyutlari_coz(m, cozum):
-        spec['durum'] = 'netlestir'
-        spec['mesaj'] = ('Nedensellik kuramam — bu veriyle "neden" sorusunun cevabı '
-                         'kanıtlanamaz. Ama kırılıma bakıp en çok katkı yapan kalemleri '
-                         'gösterebilirim. Hangi kırılım?')
-        spec['secenekler'] = [
-            {'kod': 'bolge', 'ad': 'Bölgeye göre', 'tanim': 'Hangi bölge ne kadar katkı yapmış'},
-            {'kod': 'urun_grubu', 'ad': 'Ürün grubuna göre', 'tanim': 'Hangi ürün grubu ne kadar katkı yapmış'},
-            {'kod': 'kanal', 'ad': 'Kanala göre', 'tanim': 'Hangi satış kanalı ne kadar katkı yapmış'},
-        ]
-        spec['guven'] = 0.5
-        return spec
+    # --- 2b) nedensellik ---
+    # Sistem hâlâ NEDEN iddia etmiyor; iddia edemez, bu veride sebep yok.
+    # Ama artık "hangi kalem ne kadarını çekti" hesabını yapıp gösteriyor —
+    # eskiden bunu kullanıcıya önerip bekliyordu. Cevap metni her seferinde
+    # bunun bir KATKI ayrıştırması olduğunu, sebep olmadığını yazar
+    # (lib/katki.py · UYARI).
 
     # --- 3) özel niyet ---
     hangi_ay = icerir(m, 'hangi ay') or icerir(m, 'hangi donem') or icerir(m, 'hangi ayda')
     siralama = siralama_coz(m)
+    ileri = ileri_niyet(m, cozum)
 
     # --- 4) metrik eşleştirme ---
     metrik_adaylari = esanlamli_eslestir(m, S.METRIKLER, cozum)
     if not metrik_adaylari:
+        # İleri analiz niyeti anlaşıldıysa ("... neden düştü", "... tahmini")
+        # ama hangi ölçü olduğu belli değilse, düz reddetmek yerine SOR.
+        # "Ağustos düşüşü neden" sorusunda niyet açık, eksik olan ölçü.
+        if ileri:
+            spec['durum'] = 'netlestir'
+            spec['mesaj'] = ('Hangi ölçüyü kastettiğinizi seçmem gerekiyor — '
+                             'niyeti anladım ama ölçü belirtilmedi.')
+            spec['secenekler'] = [
+                {'kod': k, 'ad': S.metrik_bul(k)['ad'], 'tanim': S.metrik_bul(k)['tanim']}
+                for k in ('net_ciro', 'satis_adet', 'hedef_gerceklesme')
+                if S.metrik_bul(k)]
+            spec['guven'] = 0.45
+            return spec
         spec['durum'] = 'kapsam_disi'
         spec['mesaj'] = 'Bu soruyu onaylı metriklerle eşleştiremedim.'
         spec['alternatif'] = 'Tanımlı metrikler: ' + ', '.join(x['ad'] for x in S.METRIKLER) + '.'
@@ -479,6 +539,23 @@ def planla(soru):
             spec['alternatif'] = ('%s yalnızca dönem bazında sorulabilir. Bu kırılım için '
                                   'Net Ciro veya Satış Adet kullanabilirim.' % olculen['ad'])
             return spec
+
+    # --- 7c) ileri analiz niyeti ---
+    # Sıralamadan ÖNCE: tahmin/katkı sorularında top-N veya uç değer
+    # mantığı devreye girmemeli, hesap tamamen farklı.
+    if ileri:
+        spec['ozel'] = ileri['ozel']
+        if ileri.get('ufuk'):
+            spec['tahminUfuk'] = ileri['ufuk']
+        if ileri['ozel'] == 'katki':
+            # Kırılım belirtilmemişse bölge varsayılan: en kaba ve en
+            # yorumlanabilir kırılım o. Kullanıcı isterse belirtir.
+            spec['katkiBoyut'] = spec['boyutlar'][0] if spec['boyutlar'] else 'bolge'
+            if not spec['boyutlar']:
+                spec['aciklamalar'].append(
+                    'Kırılım belirtilmediği için bölge bazında ayrıştırıldı.')
+        spec['guven'] = 0.70 if ileri['ozel'] in ('katki', 'hacim_sepet') else 0.60
+        return spec
 
     # --- 8) sıralama ---
     if hangi_ay:

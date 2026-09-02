@@ -1,4 +1,4 @@
-# Uygulama Planı ve Test Planı
+﻿# Uygulama Planı ve Test Planı
 
 Bu doküman iki soruyu cevaplar: **ne sırayla kurulur** ve **her adımda neyi test ederek devam edilir.** Üçüncü bölüm, PoC'yi gerçek bir kurumsal ortama taşımanın koşullarını sayar.
 
@@ -64,8 +64,8 @@ python sunucu.py
 
 | Test | Nasıl | Geçme ölçütü |
 |---|---|---|
-| T3.1 Altın küme | `python test\altin_kume.py` | 19/19 |
-| T3.2 Eşanlam kapsaması | `python test\esanlam_testi.py` | 56/56 |
+| T3.1 Altın küme | `python test\altin_kume.py` | 25/25 |
+| T3.2 Eşanlam kapsaması | `python test\esanlam_testi.py` | 65/65 |
 | T3.2 Sınır davranışı | `python test\sinir_testi.py` | Anlamsız sorularda uydurma yok |
 | T3.3 Sağlık | `GET /api/saglik` | `sql.erisim=true`, `ssas.erisim=true` |
 | T3.4 Denetim kaydı | `SELECT TOP 5 * FROM denetim.AjanKayit` | Her soru bir satır, cevap metni dolu |
@@ -122,7 +122,7 @@ Tek analitik kaynak SSAS Tabular; SQL yedeği yok. **14/14 geçmeli ve dashboard
 ### 3.2 Eşanlam / söyleyiş testi — `python test\esanlam_testi.py`
 
 Kapsama testi: aynı şeyin farklı söylenişlerini ajan hâlâ anlıyor mu?
-56 söyleyiş, 11'i reddedilmesi gereken olumsuz örnek. **56/56 beklenir.**
+65 söyleyiş, 13'ü reddedilmesi gereken olumsuz örnek. **65/65 beklenir.**
 
 Olumsuz blok en az diğerleri kadar önemli — eşleştiriciyi gevşetmenin bedeli
 oradan görülür. Yeni eşanlamlı eklendiğinde önce bu koşulmalı.
@@ -177,7 +177,7 @@ Bu adım atlanırsa gerisi anlamsız. Spesifikasyon §6.4 bunun sürekli bir iş
 Geçiş adımları:
 
 1. Yeni planlayıcıyı yaz, aynı JSON şemasını üret.
-2. `python test\altin_kume.py` → 19/19 korunuyor mu?
+2. `python test\altin_kume.py` → 25/25 korunuyor mu?
 3. `python test\sinir_testi.py` → anlamsız sorularda hâlâ uydurmuyor mu?
 4. Gölge çalıştırma: bir hafta iki planlayıcıyı paralel koştur, yalnızca eskisinin cevabını göster, farkları incele.
 5. Kademeli geçiş: %10 → %50 → %100.

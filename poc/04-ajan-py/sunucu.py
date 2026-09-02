@@ -35,6 +35,7 @@ from lib import calistir_dax                                   # noqa: E402
 from lib import yorumlayici                                    # noqa: E402
 from lib import baglam_serisi                                  # noqa: E402
 from lib import denetim_sql                                    # noqa: E402
+from lib import ileri_analiz                                  # noqa: E402
 
 KOK = os.path.dirname(os.path.abspath(__file__))
 
@@ -201,6 +202,54 @@ def soruyu_isle(soru, kullanici):
         return kaydet_ve_teslim(soru, kullanici, cevap, spec)
 
     adimlar.append({'adim': 'kaynak', 'durum': 'SSAS · ' + AYAR['ssasModel'], 'ms': gecen()})
+
+    # 4b · ileri analiz: tahmin, yıl sonu projeksiyonu, katkı ayrıştırması.
+    # Normal boru hattından AYRILIR çünkü tek DAX sorgusu yetmez: seri,
+    # iki dönemin kırılımı ya da üç ölçü birlikte gerekiyor ve sonuç
+    # üzerinde açık aritmetik yapılıyor. Hesap lib/tahmin.py ve
+    # lib/katki.py içinde; dürüstlük kapıları (ufuk sınırı, R² eşiği,
+    # kestirim aralığı, "sebep değil" uyarısı) orada uygulanıyor.
+    if spec.get('ozel') and ileri_analiz.destekliyor(spec['ozel']):
+        try:
+            a = ileri_analiz.calistir(spec, AYAR)
+        except Exception as e:
+            cevap = {'durum': 'hata',
+                     'cevap': 'İleri analiz çalıştırılamadı: %s' % str(e).split('\n')[0],
+                     'spesifikasyon': spec, 'sorgu': None,
+                     'kunye': {'sureMs': gecen()}, 'adimlar': adimlar}
+            return kaydet_ve_teslim(soru, kullanici, cevap, spec)
+
+        adimlar.append({'adim': spec['ozel'], 'durum': 'hesaplandı', 'ms': gecen()})
+        ana_metrik = S.metrik_bul(spec['metrikler'][0])
+        cevap = {
+            'baglam': a.get('baglam') or [],
+            'durum': 'ok',
+            'cevap': a['metin'],
+            'aciklama': a.get('aciklama'),
+            'vurgu': a.get('vurgu'),
+            'satirlar': a.get('satirlar') or [],
+            'spesifikasyon': spec,
+            'sorgu': {'dil': 'DAX', 'metin': a.get('sorgu')},
+            'kunye': {
+                'kaynak': 'Semantik model · %s (SSAS Tabular)' % AYAR['ssasModel'],
+                'metrik': ['%s · onaylı v%s · %s'
+                           % (ana_metrik['ad'], ana_metrik['onay']['surum'], ana_metrik['sahip'])]
+                          if ana_metrik else [],
+                'tanim': (ana_metrik or {}).get('tanim'),
+                'donem': spec.get('donemIfade'),
+                'filtreler': spec['filtreler'],
+                'motor': 'SSAS Tabular · %s / %s' % (AYAR['ssasSunucu'], AYAR['ssasModel']),
+                'guven': spec['guven'],
+                'analiz': spec['ozel'],
+                # Belirsizlikler burada KRİTİK: tahminin aralığı, yöntemi ve
+                # "sebep değil" uyarısı bu listede taşınıyor.
+                'belirsizlikler': (spec['belirsizlikler'] or []) + (a.get('belirsizlikler') or []),
+                'aciklamalar': spec['aciklamalar'],
+                'sureMs': gecen(),
+            },
+            'adimlar': adimlar,
+        }
+        return kaydet_ve_teslim(soru, kullanici, cevap, spec)
 
     # 5 · derle
     try:

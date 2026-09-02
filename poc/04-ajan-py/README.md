@@ -98,21 +98,81 @@ cevaplama oranını yanlış gösterir.
 
 ---
 
+## İleri analiz — tahmin, projeksiyon, katkı
+
+Bu dördü eskiden **reddediliyordu**: tahmin `KAPSAM_DISI`'ndaydı, "neden"
+soruları netleştirmeye düşüyordu. Ret gerekçeleri hâlâ geçerli; değişen şey
+reddetmek yerine **belirsizliği ve sınırı birlikte vermek**.
+
+| Niyet | Örnek soru | Hesap |
+|---|---|---|
+| `tahmin` | *"Gelecek ay ciro ne olur"* | OLS doğrusal eğilim + %80 kestirim aralığı |
+| `yil_sonu` | *"Yıl sonunda hedefe ulaşır mıyız"* | Koşu hızı projeksiyonu + aynı dönem hedefi |
+| `katki` | *"Ciro neden düştü"* | Boyut bazında katkı ayrıştırması |
+| `hacim_sepet` | *"Düşüş adetten mi sepetten mi"* | Ciro = Adet × Sepet cebirsel ayrıştırma |
+
+`lib/tahmin.py` · `lib/katki.py` · `lib/ileri_analiz.py`
+
+### Dürüstlük kapıları
+
+Bu özelliğin tamamı, sahte kesinlik üretmemek üzerine kurulu.
+
+**Ufuk sınırı** — en fazla 3 dönem ve geçmişin üçte birinden fazla değil.
+12 ay istenirse kırpılır ve kırpıldığı söylenir. 10 dönemle 12 ay ileri
+gitmek kestirim değil kehanettir.
+
+**R² eşiği 0,30** — eğilim yoksa tahmin **üretilmez**. Bu modelin gerçek
+ciro serisinde R²=0,04; ajan şunu diyor:
+
+> Tahmin üretmiyorum: belirgin bir eğilim yok. Net ciro serisinde yön
+> açıklayıcılığı %4 (eşik %30) — bu seride doğrusal bir eğilim yakalamak
+> sayı uydurmak olurdu. Son 10 dönemin ortalaması 89,2 mn TL.
+
+**Nokta tahmini asla tek başına dönmez.** %80 kestirim aralığı zorunlu;
+tek sayı gören insan onu kesinlik sanıyor.
+
+**Toplanabilirlik.** Her ölçüde `toplanabilir` bayrağı var. Projeksiyon ve
+katkı dönemleri/kalemleri **toplar**; oran, ortalama, tekil sayım ve
+birikimli ölçülerde bu anlamsızdır ve reddedilir. İlk sürümde bu kapı
+yoktu ve *"Yıl sonunda hedefe ulaşır mıyız"* sorusu yüzdeleri toplayıp
+**"793,8%"** üretiyordu.
+
+**Aynı dönem karşılaştırması.** Hedef karşılaştırması gerçekleşen dönemlerle
+aynı aralık üzerinden yapılır. İlk sürüm 12 aylık projeksiyonu 8 aylık
+hedefe bölüp **%148,8** diyordu — dipnotu vardı ama cümlenin kendisi
+yanıltıcıydı. Şimdi %99,2 (704,5 / 710,0) ve tam yıl hedefi modelde
+olmadığı için tam yıl karşılaştırması **yapılmıyor**.
+
+### Nedensellik iddia edilmiyor
+
+Katkı ayrıştırması "neden" sorusunun cevabı **değil**; her cevapta yazıyor:
+
+> Bu bir KATKI ayrıştırmasıdır, sebep değil. Kalemlerin kendi değişiminin
+> nedeni (kampanya, rekabet, mevsim, fiyat kararı) bu modelde yok.
+
+Aritmetik kapalı: katkıların toplamı toplam değişime **tam** eşit, hacim ×
+sepet ayrıştırmasında sapma sıfır. Denetlenebilirliğin ölçüsü bu.
+
+Senaryo modelleme hâlâ kapsam dışı — *"fiyatı %10 artırsak"* karşı-olgusal
+bir soru, elastikiyet ve maliyet bilgisi modelde yok.
+
+---
+
 ## Testler
 
 ```powershell
 .\testler.cmd                      # üçü peş peşe
-python test\altin_kume.py          # 19/19 · davranış regresyonu
-python test\esanlam_testi.py       # 56/56 · söyleyiş kapsaması
+python test\altin_kume.py          # 25/25 · davranış regresyonu
+python test\esanlam_testi.py       # 65/65 · söyleyiş kapsaması
 python test\sinir_testi.py         # keşif · çalışan ajan gerektirir
 ```
 
 **Altın küme** iddialıdır: reddetmesi gereken soruyu reddetmezse test kalır.
-19 vakanın 8'i geçmişte **sessiz yanlış cevap** üretmiş gerçek hatalardır —
+25 vakanın 8'i geçmişte **sessiz yanlış cevap** üretmiş gerçek hatalardır —
 dördü denetim kaydından, kullanıcıların gerçekten sorduğu sorulardan çıktı.
 
 **Eşanlam testi** kapsama ölçer: aynı şeyin farklı söylenişlerini anlıyor mu?
-56 söyleyişin 11'i reddedilmesi gereken olumsuz örnektir. Eşleştiriciyi
+65 söyleyişin 13'ü reddedilmesi gereken olumsuz örnektir. Eşleştiriciyi
 gevşetmenin bedeli oradan görülür; yeni eşanlamlı eklendiğinde önce bu
 koşulmalı. Vakalar `test/esanlam-durumlar.json` içinde — düz JSON, elle
 düzenlenir.
@@ -132,7 +192,7 @@ yazmak yerine `lib/dilbilgisi.py` var.
 | `kural` (varsayılan) | Ek soyma + ünsüz yumuşaması. Bağımlılık yok. |
 | `zeyrek` | Zemberek'in Python portu; gerçek biçimbirim çözümlemesi. |
 
-**Ölçüldü: bu test kümesinde zeyrek'in kazancı yok.** İkisi de 56/56, hız
+**Ölçüldü: bu test kümesinde zeyrek'in kazancı yok.** İkisi de 65/65, hız
 farkı ihmal edilebilir. Zeyrek `satışlarımız → satmak`, `kârlılık → kâr`
 bağlarını kurabiliyor — kural katmanı kuramıyor — ama mevcut sorular bunu
 gerektirmiyor. Zeyrek `nltk` ve bir korpus indirmesi getiriyor; kapalı
@@ -229,6 +289,9 @@ lib/calistir_dax.py       ADOMD.NET, kalıcı bağlantı, RLS
 lib/yorumlayici.py        sonuç → Türkçe cevap + künye
 lib/baglam_serisi.py      cevap kartının trend/hedef serileri
 lib/denetim_sql.py        denetim kaydı (pyodbc)
+lib/tahmin.py             OLS eğilim tahmini + kestirim aralığı
+lib/katki.py              katkı ayrıştırması · hacim × sepet
+lib/ileri_analiz.py       tahmin/projeksiyon/katkı orkestrasyonu
 
 araclar/                  model gözatıcı · sözleşme iskeleti · sözlük boşluğu
 public/index.html         arayüz

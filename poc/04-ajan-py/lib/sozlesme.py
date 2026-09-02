@@ -48,6 +48,7 @@ def normalize(s):
 METRIKLER = [
     {
         'kod': 'net_ciro',
+        'toplanabilir': True,
         'ad': 'Net Ciro',
         'dax': '[Net Ciro]',
         'birim': 'TRY',
@@ -80,6 +81,7 @@ METRIKLER = [
     },
     {
         'kod': 'satis_adet',
+        'toplanabilir': True,
         'ad': 'Satış Adet',
         'dax': '[Satış Adet]',
         'birim': 'adet',
@@ -108,6 +110,9 @@ METRIKLER = [
     },
     {
         'kod': 'musteri_sayisi',
+        # Donemler boyunca TOPLANAMAZ (tekil sayim; aylari toplamak tekrar eden musteriyi iki kez sayar) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Müşteri Sayısı',
         'dax': '[Müşteri Sayısı]',
         'birim': 'kişi',
@@ -134,6 +139,7 @@ METRIKLER = [
     },
     {
         'kod': 'hedef',
+        'toplanabilir': True,
         'ad': 'Hedef',
         'dax': '[Hedef]',
         'birim': 'TRY',
@@ -158,6 +164,9 @@ METRIKLER = [
     },
     {
         'kod': 'hedef_gerceklesme',
+        # Donemler boyunca TOPLANAMAZ (oran) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Hedef Gerçekleşme %',
         'dax': '[Hedef Gerçekleşme %]',
         'birim': 'oran',
@@ -189,6 +198,9 @@ METRIKLER = [
     },
     {
         'kod': 'ortalama_sepet',
+        # Donemler boyunca TOPLANAMAZ (ortalama) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Ortalama Sepet',
         'dax': '[Ortalama Sepet]',
         'birim': 'TRY',
@@ -214,6 +226,9 @@ METRIKLER = [
     },
     {
         'kod': 'aylik_degisim',
+        # Donemler boyunca TOPLANAMAZ (oran) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Aylık Değişim %',
         'dax': '[Aylık Değişim %]',
         'birim': 'oran',
@@ -245,6 +260,9 @@ METRIKLER = [
     },
     {
         'kod': 'ortalama_aylik_ciro',
+        # Donemler boyunca TOPLANAMAZ (ortalama) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Ortalama Aylık Ciro',
         'dax': '[Ortalama Aylık Ciro]',
         'birim': 'TRY',
@@ -259,6 +277,7 @@ METRIKLER = [
     },
     {
         'kod': 'hedef_sapma',
+        'toplanabilir': True,
         'ad': 'Hedef Sapma',
         'dax': '[Hedef Sapma]',
         'birim': 'TRY',
@@ -293,6 +312,9 @@ METRIKLER = [
     },
     {
         'kod': 'kumulatif_ciro',
+        # Donemler boyunca TOPLANAMAZ (zaten birikimli) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Kümülatif Ciro',
         'dax': '[Kümülatif Ciro]',
         'birim': 'TRY',
@@ -315,6 +337,9 @@ METRIKLER = [
     },
     {
         'kod': 'onceki_ay_ciro',
+        # Donemler boyunca TOPLANAMAZ (gecikmeli deger) — yil sonu
+        # projeksiyonu ve katki ayristirmasi bu olcuyu reddeder.
+        'toplanabilir': False,
         'ad': 'Önceki Ay Ciro',
         'dax': '[Önceki Ay Ciro]',
         'birim': 'TRY',
@@ -335,6 +360,7 @@ METRIKLER = [
     },
     {
         'kod': 'hedefi_tutan_ay',
+        'toplanabilir': True,
         'ad': 'Hedefi Tutan Ay Sayısı',
         'dax': '[Hedefi Tutan Ay Sayısı]',
         'birim': 'adet',
@@ -519,10 +545,16 @@ KAPSAM_DISI = [
         'neden': 'Rakip ve pazar payı verisi bu veri ambarında yok.',
         'alternatif': 'Kendi ciro ve büyüme rakamlarımızı gösterebilirim.'
     },
+    # Tahmin ARTIK kapsam dışı değil — lib/tahmin.py ile eklendi. Ama
+    # senaryo modelleme ("fiyatı %10 artırsak ne olur") hâlâ dışında:
+    # karşı-olgusal soru bu veriyle cevaplanamaz, elastikiyet bilgisi yok.
     {
-        'desen': ['tahmin', 'gelecek', 'onumuzdeki', 'ne olur', 'projeksiyon', 'forecast'],
-        'neden': 'Tahmin ve senaryo modelleme bu sürümün kapsamı dışında (§1.3).',
-        'alternatif': 'Geçmiş trendi ve hedef gerçekleşmesini gösterebilirim.'
+        'desen': ['senaryo', 'ya olsaydi', 'olsaydi ne olur', 'simulasyon',
+                  'what if', 'artirsak', 'dusursek', 'indirim yapsak'],
+        'neden': 'Senaryo modelleme bu sürümün kapsamı dışında: karşı-olgusal '
+                 'soru için gereken elastikiyet ve maliyet bilgisi modelde yok.',
+        'alternatif': 'Geçmiş eğilimi, yıl sonu projeksiyonunu ve katkı '
+                      'ayrıştırmasını gösterebilirim.'
     },
     {
         'desen': ['stok', 'depo', 'envanter'],
