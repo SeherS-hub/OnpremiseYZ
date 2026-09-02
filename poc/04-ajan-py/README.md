@@ -106,7 +106,7 @@ reddetmek yerine **belirsizliği ve sınırı birlikte vermek**.
 
 | Niyet | Örnek soru | Hesap |
 |---|---|---|
-| `tahmin` | *"Gelecek ay ciro ne olur"* | OLS doğrusal eğilim + %80 kestirim aralığı |
+| `tahmin` | *"Gelecek ay ciro ne olur"* | Eğilim varsa OLS doğrusal eğilim, yoksa seviye tahmini — ikisinde de %80 kestirim aralığı |
 | `yil_sonu` | *"Yıl sonunda hedefe ulaşır mıyız"* | Koşu hızı projeksiyonu + aynı dönem hedefi |
 | `katki` | *"Ciro neden düştü"* | Boyut bazında katkı ayrıştırması |
 | `hacim_sepet` | *"Düşüş adetten mi sepetten mi"* | Ciro = Adet × Sepet cebirsel ayrıştırma |
@@ -121,12 +121,34 @@ Bu özelliğin tamamı, sahte kesinlik üretmemek üzerine kurulu.
 12 ay istenirse kırpılır ve kırpıldığı söylenir. 10 dönemle 12 ay ileri
 gitmek kestirim değil kehanettir.
 
-**R² eşiği 0,30** — eğilim yoksa tahmin **üretilmez**. Bu modelin gerçek
-ciro serisinde R²=0,04; ajan şunu diyor:
+**R² eşiği 0,30** — eğilim yoksa **yön tahmini** üretilmez. Ama soru
+cevapsız da kalmaz: yön iddiası olmayan bir **seviye tahmini** verilir.
+Ciro serisinde R²=0,04 olduğu için ajan şunu diyor:
 
-> Tahmin üretmiyorum: belirgin bir eğilim yok. Net ciro serisinde yön
-> açıklayıcılığı %4 (eşik %30) — bu seride doğrusal bir eğilim yakalamak
-> sayı uydurmak olurdu. Son 10 dönemin ortalaması 89,2 mn TL.
+> **TAHMİN · SEVİYE** · net ciro: seride belirgin bir yön yok (R²=0,04,
+> eşik 0,30) — bu yüzden artış/azalış tahmini yapmıyorum. Beklenti
+> önümüzdeki 3 dönemin her biri için aynı: son 10 dönemin ortalaması
+> **89,2 mn TL**, %80 aralık **73,1 – 105,4 mn TL**. Bu bir seviye
+> tahminidir, yön iddiası içermez.
+
+Eşiği düşürüp zayıf eğilimi "tahmin" diye satmak seçenek değildi, çünkü
+**ölçtüm**: ciro serisinde geriye dönük tek adım (walk-forward) testinde
+ortalama 9,2 mn TL, son değer 9,4 mn TL, doğrusal eğilim **12,0 mn TL**
+hata verdi. Yani bu seride eğilime zorlamak yalnız dürüst olmayan değil,
+aynı zamanda **daha kötü** bir tahmin.
+
+**Seviye tahmininin alt yöntemi ölçüyle seçiliyor** — lag-1
+otokorelasyona bakılıyor:
+
+| Ölçüm | Varsayım | Beklenti | Aralık |
+|---|---|---|---|
+| lag-1 < 0,50 | şoklar geçici, seri ortalamasına dönüyor | son N dönemin ortalaması | her ufukta **aynı** genişlik |
+| lag-1 ≥ 0,50 | şoklar kalıcı (rastgele yürüyüş gibi) | son gerçekleşen dönem | ufukla **√k genişler** |
+
+Yanlış tarafı seçmek aralığı ya gereksiz genişletir ya da — tehlikeli
+olan bu — sahte biçimde daraltır. Ciro serisinde lag-1 = −0,03, yani
+ortalama yöntemi ve sabit genişlikli aralık. Her iki dal `test/tahmin_testi.py`
+içinde ayrı ayrı sınanıyor (16 vaka, SSAS gerekmez).
 
 **Nokta tahmini asla tek başına dönmez.** %80 kestirim aralığı zorunlu;
 tek sayı gören insan onu kesinlik sanıyor.

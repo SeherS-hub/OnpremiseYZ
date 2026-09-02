@@ -586,9 +586,14 @@ Invoke-WebRequest $u -UseDefaultCredentials -OutFile onizleme\CevapKarti-tahmin.
 
 `pKayitId` parametresinin geçerli değerleri `denetim.vw_SonKayitlar` — **son 50 soru**. Testleri iki kez koşturursanız incelediğiniz kayıt bu penceden düşer ve render `rsInvalidReportParameter` verir; yeni bir kayıt üretip onu açın.
 
-Önizleme: `03-rapor/onizleme/CevapKarti-tahmin.png`
+Önizlemeler: `03-rapor/onizleme/CevapKarti-tahmin.png` (eğilim tahmini) · `03-rapor/onizleme/CevapKarti-seviye.png` (seviye tahmini)
 
-Doğrulama notu: gerçek ciro serisinin R²'si 0,04 — ajan o seride **tahmin üretmeyi reddediyor**. Kartı doğrularken eşiği gevşetmek yerine gerçekten eğilim taşıyan bir ölçü (`Hedef`, R²=0,46) kullandım; dürüstlük kapısı test uğruna esnetilmemeli.
+Kart iki tahmin türünü de aynı biçimde çiziyor:
+
+- **eğilim tahmini** (R² ≥ 0,30) — sütunlar yükselen/düşen, aralık ufukla genişler. Örnek: `Hedef`, R²=0,46.
+- **seviye tahmini** (eğilim yok) — sütunlar düz, aralık sabit genişlikte. Örnek: `Net Ciro`, R²=0,04.
+
+İkisi de "içi boş kesikli sütun + iki kesikli çizgi" olarak çizilir; ayrımı grafik değil cevap metni ve künye taşır (`TAHMİN · SEVİYE`). Düz sütun dizisinin kendisi "yön iddiam yok" demiş oluyor.
 
 ### 5.1 Hangisi
 

@@ -11,6 +11,11 @@ echo ===== ALTIN KUME =====
 if errorlevel 1 goto :hata
 
 echo.
+echo ===== TAHMIN BIRIM TESTI =====
+"%PY%" test\tahmin_testi.py
+if errorlevel 1 goto :hata
+
+echo.
 echo ===== ESANLAM KAPSAMASI =====
 "%PY%" test\esanlam_testi.py
 if errorlevel 1 goto :hata

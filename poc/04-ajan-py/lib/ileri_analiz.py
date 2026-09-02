@@ -83,6 +83,42 @@ def _sonraki_donemler(son_etiket, adet):
     return cikti
 
 
+def _etiketle(noktalar, son_etiket):
+    """Tahmin noktalarına dönem etiketi yazar — model kapsamının ötesi."""
+    donemler = _sonraki_donemler(son_etiket, len(noktalar))
+    cikti = []
+    for n, d in zip(noktalar, donemler):
+        n = dict(n)
+        n['etiket'] = d
+        cikti.append(n)
+    return cikti
+
+
+def _seviye_belirsizlik(t):
+    """Seviye tahmininin künyesi. Aralığın genişliğinin NEDEN o genişlikte
+    olduğunu da yazıyor: aralığı okuyan kişi varsayımı da görmeli."""
+    b = [
+        'TAHMİN — gerçekleşme değil. Yöntem: %s. Doğrusal eğilim açıklayıcılığı '
+        'R²=%s (eşik %s) olduğu için yön tahmini üretilmedi.'
+        % (t['yontem'], _ondalik(t['r2']), _ondalik(t['esik'])),
+        'Aralık %80 kestirim aralığıdır; gerçekleşme beşte bir olasılıkla dışına çıkar.',
+    ]
+    if t['altYontem'] == 'ortalama':
+        b.append('Aralık her ufukta aynı genişlikte, çünkü ölçülen lag-1 '
+                 'otokorelasyon %s: şoklar kalıcı değil, seri ortalamasına dönüyor.'
+                 % _ondalik(t['otokorelasyon']))
+    else:
+        b.append('Aralık ufukla genişliyor, çünkü ölçülen lag-1 otokorelasyon %s: '
+                 'şoklar kalıcı, her dönem yeni bir sapma ekliyor.'
+                 % _ondalik(t['otokorelasyon']))
+    if t['kirpildi']:
+        b.append('İstenen ufuk %d döneme kırpıldı: %d dönem geçmişle daha ileriye '
+                 'gitmek kestirim değil kehanet olur.' % (t['ufuk'], t['gozlem']))
+    b.append('Seviye tahmini serinin kendi dağılımından gelir; kampanya, fiyat kararı, '
+             'rekabet gibi dışsal etkiler bu modelde yok.')
+    return b
+
+
 def _baglam(etiketler, degerler, met, ek_noktalar=None):
     """Cevap kartı serisi. Tahmin noktaları 'tahmin' serisi olarak ayrı
     işaretlenir; kartta gerçekleşenle aynı renge girmemeleri için.
@@ -129,32 +165,45 @@ def _tahmin(spec, ayar):
             'sorgu': sorgu, 'belirsizlikler': [], 'vurgu': None,
         }
 
-    if t['durum'] == 'egilim_yok':
-        ort = sayi_bicimle(t['ortalama'], met['birim'])
+    if t['durum'] == 'seviye':
+        # Eğilim yok. Eskiden burada tahmin ÜRETİLMİYORDU; artık yön
+        # iddiası olmayan bir seviye tahmini veriliyor. Fark önemli:
+        # "önümüzdeki ay şu bandın içinde olmasını bekliyorum" dürüst bir
+        # cümle, "şu kadar artacak" ise bu seride uydurma olurdu.
+        noktalar = _etiketle(t['noktalar'], etiketler[-1])
+        ilk = noktalar[0]
+        bicim = lambda x: sayi_bicimle(x, met['birim'])   # noqa: E731
+        if t['altYontem'] == 'ortalama':
+            # Aralık her dönemde aynı; üç kez aynı sayıyı yazmak gürültü.
+            kapsam = ('önümüzdeki dönem için' if t['ufuk'] == 1
+                      else 'önümüzdeki %d dönemin her biri için aynı:' % t['ufuk'])
+            beklenti = ('%s son %d dönemin ortalaması **%s**, %%80 aralık **%s – %s**'
+                        % (kapsam, t['gozlem'], bicim(ilk['deger']),
+                           bicim(ilk['alt']), bicim(ilk['ust'])))
+        else:
+            beklenti = ('son gerçekleşen seviye taşınarak ' + '; '.join(
+                '%s **%s** (%%80 aralık: %s – %s)'
+                % (donem_dogal(n['etiket']), bicim(n['deger']),
+                   bicim(n['alt']), bicim(n['ust'])) for n in noktalar))
         return {
-            'metin': ('**Tahmin üretmiyorum: belirgin bir eğilim yok.** %s serisinde '
-                      'yön açıklayıcılığı %%%d (eşik %%%d) — bu seride doğrusal bir '
-                      'eğilim yakalamak sayı uydurmak olurdu. Son %d dönemin ortalaması '
-                      '**%s**; gerçekçi beklenti bu bandın etrafıdır.'
-                      % (tr_buyuk_ilk(ad), round(t['r2'] * 100),
-                         round(t['esik'] * 100), len(degerler), ort)),
-            'aciklama': ('%s serisinde belirgin bir eğilim yok; tahmin yerine ortalama '
-                         'seviye bildirildi.' % tr_buyuk_ilk(ad)),
-            'satirlar': [], 'baglam': _baglam(etiketler, degerler, met),
+            'metin': ('**TAHMİN · SEVİYE** · %s: seride belirgin bir yön yok '
+                      '(R²=%s, eşik %s) — bu yüzden artış/azalış tahmini '
+                      'yapmıyorum. Beklenti %s. Bu bir seviye tahminidir, yön '
+                      'iddiası içermez.'
+                      % (ad, _ondalik(t['r2']), _ondalik(t['esik']), beklenti)),
+            'aciklama': ('%s serisinde belirgin eğilim yok; %d dönem ileri için yön '
+                         'iddiası olmayan seviye tahmini verildi.'
+                         % (tr_buyuk_ilk(ad), t['ufuk'])),
+            'satirlar': [{'Dönem': n['etiket'], met['ad']: n['deger']}
+                         for n in noktalar],
+            'baglam': _baglam(etiketler, degerler, met, noktalar),
             'sorgu': sorgu,
-            'belirsizlikler': ['Doğrusal eğilim açıklayıcılığı R²=%s, eşik %s — '
-                               'tahmin bilinçli olarak üretilmedi.'
-                               % (_ondalik(t['r2']), _ondalik(t['esik']))],
-            'vurgu': {'etiket': 'ortalama · %d dönem' % len(degerler), 'deger': ort},
+            'belirsizlikler': _seviye_belirsizlik(t),
+            'vurgu': {'etiket': 'TAHMİN · seviye · ' + donem_dogal(ilk['etiket']),
+                      'deger': sayi_bicimle(ilk['deger'], met['birim'])},
         }
 
-    donemler = _sonraki_donemler(etiketler[-1], t['ufuk'])
-    noktalar = []
-    for n, d in zip(t['noktalar'], donemler):
-        n = dict(n)
-        n['etiket'] = d
-        noktalar.append(n)
-
+    noktalar = _etiketle(t['noktalar'], etiketler[-1])
     ilk = noktalar[0]
     parcalar = []
     for n in noktalar:

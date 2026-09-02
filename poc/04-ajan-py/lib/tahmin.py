@@ -17,8 +17,11 @@ bedeli sahte kesinliktir:
 
   1. Ufuk en fazla 3 dönem VE geçmişin üçte birinden fazla değil.
      10 dönemle 12 ay ileri gitmek kestirim değil kehanettir.
-  2. R² < 0.30 ise tahmin ÜRETİLMEZ. Eğilim yoksa doğru yanıt
-     "belirgin bir eğilim yok" demektir.
+  2. R² < 0.30 ise EĞİLİM tahmini üretilmez — ama soru cevapsız da
+     kalmaz: yön iddiası olmayan bir SEVİYE tahmini verilir (aşağıya
+     bakın). Eşiği düşürüp zayıf eğilimi "tahmin" diye satmak, gerçek
+     olmayan bir yön iddiasıdır; ölçtüm, o yol daha kötü sonuç
+     veriyor (bkz. seviye tahmini gerekçesi).
   3. Nokta tahmini asla tek başına dönmez; %80 kestirim aralığı
      zorunludur. Tek sayı gören insan onu kesinlik sanıyor.
   4. Çıktı her yerde TAHMİN diye etiketlenir — cevap cümlesinde,
@@ -39,6 +42,15 @@ UFUK_ORANI = 3.0          # geçmiş / 3
 
 # Bu eşiğin altında eğilim "yok" sayılır.
 ASGARI_R2 = 0.30
+
+# Eğilim yokken hangi temel yöntem? Şoklar kalıcıysa (yüksek lag-1
+# otokorelasyon) seri rastgele yürüyüşe benzer, beklenti SON DEĞERdir ve
+# aralık ufukla genişler. Şoklar geçiciyse beklenti ORTALAMAdır ve aralık
+# sabit genişlikte kalır. Eşik gözle değil ölçüyle konuldu: net ciro
+# serisinde lag-1 = -0,03 (şok kalmıyor) ve geriye dönük tek adım testinde
+# ortalama 9,2 mn, son değer 9,4 mn, doğrusal eğilim 12,0 mn hata verdi —
+# yani eğilime zorlamak en kötü seçenek.
+OTOKORELASYON_ESIGI = 0.50
 
 # %80 aralık için t katsayısı (serbestlik derecesine göre, iki yönlü).
 # Tablo küçük tutuldu; scipy bağımlılığı eklemeye değmez.
@@ -89,10 +101,85 @@ def dogrusal_uydur(degerler):
             'kalintiSH': kalinti_sh, 'sd': sd, 'n': n, 'sxx': sxx, 'xort': xort}
 
 
+def otokorelasyon(degerler):
+    """Lag-1 otokorelasyon. Şok kalıcı mı, geçiyor mu sorusunun ölçüsü."""
+    n = len(degerler)
+    if n < 3:
+        return 0.0
+    ort = sum(degerler) / float(n)
+    payda = sum((d - ort) ** 2 for d in degerler)
+    if payda == 0:
+        return 0.0
+    pay = sum((degerler[i] - ort) * (degerler[i - 1] - ort) for i in range(1, n))
+    return pay / payda
+
+
+def _sapma(degerler):
+    n = len(degerler)
+    if n < 2:
+        return 0.0
+    ort = sum(degerler) / float(n)
+    return math.sqrt(sum((d - ort) ** 2 for d in degerler) / (n - 1))
+
+
+def seviye_tahmini(temiz, ufuk):
+    """Eğilim yokken kullanılan tahmin. Yön iddiası İÇERMEZ.
+
+    İki alt yöntem, seçimi ölçüye bağlı:
+
+      ortalama · şoklar geçici (lag-1 otokorelasyon düşük). Beklenti son
+        dönemlerin ortalaması, aralık her ufukta aynı genişlikte — çünkü
+        varsayım "seri kendi ortalamasına dönüyor".
+
+      son değer · şoklar kalıcı (lag-1 yüksek, rastgele yürüyüş gibi).
+        Beklenti son gerçekleşen, aralık ufukla √k oranında genişler —
+        çünkü her dönem yeni bir kalıcı şok ekliyor.
+
+    Yanlış alt yöntemi seçmek aralığı ya gereksiz genişletir ya da —
+    tehlikeli olan bu — sahte biçimde daraltır.
+    """
+    n = len(temiz)
+    ac1 = otokorelasyon(temiz)
+    sinir = azami_ufuk(n)
+    kirpildi = ufuk > sinir
+    ufuk = min(ufuk, sinir)
+    ort = sum(temiz) / float(n)
+
+    if ac1 >= OTOKORELASYON_ESIGI:
+        # Rastgele yürüyüş: fark serisinin saçılımı taşınır.
+        farklar = [temiz[i] - temiz[i - 1] for i in range(1, n)]
+        sd_fark = _sapma(farklar)
+        t = _t80(len(farklar) - 1)
+        taban = temiz[-1]
+        noktalar = []
+        for k in range(1, ufuk + 1):
+            se = sd_fark * math.sqrt(k)
+            noktalar.append({'adim': k, 'deger': taban,
+                             'alt': taban - t * se, 'ust': taban + t * se})
+        alt_yontem = 'son_deger'
+        yontem = 'son değer taşınması (şoklar kalıcı)'
+    else:
+        sapma = _sapma(temiz)
+        t = _t80(n - 1)
+        se = sapma * math.sqrt(1.0 + 1.0 / n)   # tek gözlem + ortalama hatası
+        noktalar = [{'adim': k, 'deger': ort,
+                     'alt': ort - t * se, 'ust': ort + t * se}
+                    for k in range(1, ufuk + 1)]
+        alt_yontem = 'ortalama'
+        yontem = 'son %d dönem ortalaması (şoklar geçici)' % n
+
+    return {'noktalar': noktalar, 'ortalama': ort, 'sonDeger': temiz[-1],
+            'sapma': _sapma(temiz), 'otokorelasyon': ac1, 'gozlem': n,
+            'ufuk': ufuk, 'ufukSiniri': sinir, 'kirpildi': kirpildi,
+            'altYontem': alt_yontem, 'yontem': yontem}
+
+
 def tahminle(degerler, ufuk):
     """Seriyi `ufuk` dönem ileri kestirir.
 
-    Döner: {'durum': 'ok'|'egilim_yok'|'yetersiz_veri', ...}
+    Döner: {'durum': 'ok'|'seviye'|'yetersiz_veri', ...}
+      ok     · doğrusal eğilim yakalandı, yön iddiası var
+      seviye · eğilim yok; yön iddiası olmayan seviye tahmini
     """
     temiz = [float(d) for d in degerler if d is not None]
     if len(temiz) < ASGARI_GOZLEM:
@@ -105,9 +192,10 @@ def tahminle(degerler, ufuk):
                 'gereken': ASGARI_GOZLEM}
 
     if uy['r2'] < ASGARI_R2:
-        return {'durum': 'egilim_yok', 'r2': uy['r2'],
-                'ortalama': sum(temiz) / len(temiz),
-                'esik': ASGARI_R2}
+        s = seviye_tahmini(temiz, ufuk)
+        s.update({'durum': 'seviye', 'r2': uy['r2'], 'esik': ASGARI_R2,
+                  'egim': uy['egim']})
+        return s
 
     sinir = azami_ufuk(len(temiz))
     kirpildi = ufuk > sinir

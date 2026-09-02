@@ -97,7 +97,8 @@ Bunun tersi olan yaklaşım — binlerce satır veriyi modelin bağlamına doldu
 
 - **Yazma işlemleri.** Sistem hiçbir koşulda veri değiştirmez; bağlantı salt okunur kullanıcıyla açılır.
 - **Serbest metin doküman arama.** Sözleşme, sunum, e-posta üzerinde RAG ayrı bir projedir; CPU maliyeti profili tamamen farklıdır.
-- **Tahmin ve senaryo modelleme.** "Gelecek çeyrek ne olur?" sorusu istatistiksel model gerektirir, LLM'in işi değildir.
+- **Senaryo modelleme.** "Fiyatı %10 artırsak ne olur?" karşı-olgusal veri gerektirir; modelde yok, kapsam dışı kalıyor.
+- ~~**Tahmin.**~~ *(PoC'de kapsama alındı.)* "Gelecek ay ne olur?" sorusu LLM'in değil istatistiğin işi — bu yüzden LLM'e değil açık aritmetiğe verildi: eğilim varsa en küçük kareler doğrusu, yoksa yön iddiası olmayan seviye tahmini; her ikisinde %80 kestirim aralığı, ufuk sınırı ve TAHMİN etiketi zorunlu. Ayrıntı: `poc/04-ajan-py/README.md` → *Dürüstlük kapıları*.
 - **Gerçek zamanlı operasyonel veri.** Kaynak, DWH tazeleme takvimine bağlıdır (tipik olarak T-1).
 - **Otonom eylem.** Asistan e-posta göndermez, sistemde işlem başlatmaz.
 - **Model eğitimi / ince ayar.** Faz 3'e kadar yalnızca istem mühendisliği ve retrieval; ince ayar §14.4'te değerlendirilir.
