@@ -240,6 +240,7 @@ Kritik tasarım kararı, spekteki ile aynı: **model SQL/DAX yazmaz, sorgu spesi
 | Ajan | **yalnızca SSAS** — SQL yedeği yok |
 | SatisDashboard | **yalnızca SSAS** (OLEDB-MD sağlayıcısı, DAX sorguları) |
 | CevapKarti | **yalnızca denetim kaydı** — üç grafiğin verisini ajan SSAS'tan çekip cevapla birlikte yazar |
+| CevapKarti · tahmin | trend grafiği `tahmin` · `tahmin_alt` · `tahmin_ust` serilerini de çizer: **içi boş kesikli sütun** = nokta tahmini, iki kesikli çizgi = %80 kestirim aralığı. Gerçekleşen dolu, tahmin boş — bakan kişi ölçümü kestirimden ayırt etsin diye |
 | SQL Server | modelin besleme kaynağı + denetim kaydı deposu. Hiçbir rapor iş verisi için SQL'e gitmez |
 
 **SSAS erişilemezse ajan SQL'e düşmez**, cevap vermeyi reddeder. Düşseydi aynı soru iki farklı ölçü tanımından cevaplanabilir, sayılar sessizce ayrışırdı — tek kaynak ilkesi bunu yasaklar.
@@ -548,6 +549,46 @@ $r=Invoke-WebRequest $u -UseBasicParsing -UseDefaultCredentials -TimeoutSec 300
 ```
 
 SSRS'in kendi görüntü render'ı; tarayıcı ekran görüntüsü değil, raporun basılı hâlinin birebir çıktısı. Sayfa sayısını doğrulamak için PDF alıp `/Type /Page` saymak yeterli.
+
+### 5.0c Cevap kartına tahmin serisi
+
+Ajan tahmin üretebildiğinden beri (`04-ajan-py/lib/tahmin.py`) kart bunu da çizmek zorundaydı: nokta tahminini gerçekleşenle **aynı** renkte göstermek, ölçülmüş sayı ile kestirimi birbirine karıştırmak olurdu.
+
+Ajan tarafı: `ileri_analiz._baglam()` tahmin noktalarını üç ayrı seri olarak yazıyor — `tahmin`, `tahmin_alt`, `tahmin_ust`. Şema değişmedi; `denetim.AjanKayitSatir` birleşik anahtarı `(KayitId, Seri, Sira)` olduğu için aynı sıra numarası üç seride birlikte durabiliyor.
+
+Kart tarafı: `Trend` veri kümesi artık tek taramada pivotluyor (`MAX(CASE WHEN Seri = … END)`) ve **02 // TREND** grafiği dört seri çiziyor:
+
+| Seri | Çizim | Neden |
+|---|---|---|
+| `Gercek` | dolu camgöbeği sütun | ölçülmüş |
+| `Tahmin` | **içi boş**, kesikli kenarlıklı sütun | kestirim — dolu olmaması kasıtlı |
+| `TahminUst` / `TahminAlt` | iki kesikli çizgi | %80 kestirim aralığı |
+
+Tahmin yoksa üç kolon da `NULL` kalır, grafik eskisi gibi yalnızca gerçekleşeni çizer ve başlıktaki gösterge (`■ GERÇEKLEŞEN  ■ TAHMİN %80`) görünmez.
+
+Bu turda çıkan üç somut ders:
+
+| Sorun | Sebep | Çözüm |
+|---|---|---|
+| REST v2.0 geçersiz RDL'e **boş gövdeli 500** döndü | portal şema hatasını iletmiyor | `03-rapor/rdl-yukle.ps1` **SOAP** (`ReportService2010.SetItemDefinition`) kullanıyor; şema hatasını *"element X has invalid child element Y. List of possible elements expected: …"* diye tam metniyle veriyor |
+| `Marker` / `EmptyPoints` reddedildi | RDL'de adları `ChartMarker` ve `ChartEmptyPoints`; `Style` gibi grafik blokları katı `xs:sequence` | doğru ad ve sıra |
+| Sütun dolgusu veri noktasındaki `BackgroundColor`'ı yok saydı | gradyan verilmediğinde **palet eziyor** (aynı tuzak hedef grafiğinde de vardı) | dolgu rengi `ChartCustomPaletteColors` içinde, seri sırasına göre |
+
+Ayrıca kart artık `<Language>tr-TR</Language>` taşıyor: `Format(…, "#,0")` sunucunun kültürünü kullandığı için binlik ayırıcı virgüle düşüyordu (`97,466,667` → `97.466.667`).
+
+Yükleme ve önizleme:
+
+```powershell
+.\03-rapor\rdl-yukle.ps1                       # SOAP ile guncelle, sema hatasini oku
+$u='http://localhost/ReportServer?%2fCevapKarti&rs:Command=Render&rs:Format=IMAGE&rc:OutputFormat=PNG&rc:DpiX=240&rc:DpiY=240&pKayitId=<kayit-no>'
+Invoke-WebRequest $u -UseDefaultCredentials -OutFile onizleme\CevapKarti-tahmin.png
+```
+
+`pKayitId` parametresinin geçerli değerleri `denetim.vw_SonKayitlar` — **son 50 soru**. Testleri iki kez koşturursanız incelediğiniz kayıt bu penceden düşer ve render `rsInvalidReportParameter` verir; yeni bir kayıt üretip onu açın.
+
+Önizleme: `03-rapor/onizleme/CevapKarti-tahmin.png`
+
+Doğrulama notu: gerçek ciro serisinin R²'si 0,04 — ajan o seride **tahmin üretmeyi reddediyor**. Kartı doğrularken eşiği gevşetmek yerine gerçekten eğilim taşıyan bir ölçü (`Hedef`, R²=0,46) kullandım; dürüstlük kapısı test uğruna esnetilmemeli.
 
 ### 5.1 Hangisi
 

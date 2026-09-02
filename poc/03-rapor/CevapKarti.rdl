@@ -115,9 +115,21 @@ ORDER BY Sira</CommandText>
     <DataSet Name="Trend">
       <Query>
         <DataSourceName>dsPOC</DataSourceName>
-        <CommandText>SELECT Sira AS DonemKey, Etiket AS DonemAd, Deger
+        <CommandText>/* Gerceklesen ile tahmin AYNI Sira ekseninde art arda durur:
+   birlesik anahtar (KayitId, Seri, Sira) ayni sirayi farkli seride
+   tutmaya izin verdigi icin pivot tek taramayla cikiyor.
+   Tahmin yoksa Tahmin/TahminAlt/TahminUst tumden NULL kalir; grafik
+   o zaman eskisi gibi yalnizca gerceklesen cizer. */
+SELECT Sira AS DonemKey,
+       MAX(Etiket)                                        AS DonemAd,
+       MAX(CASE WHEN Seri = N'trend'      THEN Deger END) AS Gercek,
+       MAX(CASE WHEN Seri = N'tahmin'     THEN Deger END) AS Tahmin,
+       MAX(CASE WHEN Seri = N'tahmin_alt' THEN Deger END) AS TahminAlt,
+       MAX(CASE WHEN Seri = N'tahmin_ust' THEN Deger END) AS TahminUst
 FROM denetim.AjanKayitSatir
-WHERE KayitId = @pKayitId AND Seri = N'trend'
+WHERE KayitId = @pKayitId
+  AND Seri IN (N'trend', N'tahmin', N'tahmin_alt', N'tahmin_ust')
+GROUP BY Sira
 ORDER BY Sira</CommandText>
         <QueryParameters>
           <QueryParameter Name="@pKayitId"><Value>=Parameters!pKayitId.Value</Value></QueryParameter>
@@ -126,8 +138,10 @@ ORDER BY Sira</CommandText>
       <Fields>
         <Field Name="DonemKey"><DataField>DonemKey</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
         <Field Name="DonemAd"><DataField>DonemAd</DataField><rd:TypeName>System.String</rd:TypeName></Field>
-        <Field Name="Deger"><DataField>Deger</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
-        
+        <Field Name="Gercek"><DataField>Gercek</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Tahmin"><DataField>Tahmin</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="TahminAlt"><DataField>TahminAlt</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="TahminUst"><DataField>TahminUst</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
       </Fields>
     </DataSet>
 
@@ -171,6 +185,12 @@ ORDER BY Sira</CommandText>
   </ReportParameters>
 
   <ConsumeContainerWhitespace>true</ConsumeContainerWhitespace>
+
+  <!-- Rapor dili acik yazilmali: aksi halde Format("#,0") sunucunun
+       kulturunu kullaniyor ve binlik ayirici virgule dusuyor
+       (97,466,667). Ajan cevabi zaten Turkce bicimliyor; kartin da
+       ayni ayiriciyi kullanmasi gerekiyor. -->
+  <Language>tr-TR</Language>
 
   <ReportSections>
   <ReportSection>
@@ -374,10 +394,20 @@ ORDER BY Sira</CommandText>
 
       <Textbox Name="lblTrend">
         <Top>4.00in</Top><Left>0in</Left><Height>0.16in</Height><Width>3.6in</Width>
-        <Paragraphs><Paragraph><TextRuns><TextRun>
-          <Value>="02 // TREND — " &amp; UCase(Split(First(Fields!Metrikler.Value,"Kayit") &amp; " ·", " ·")(0))</Value>
-          <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
-        </TextRun></TextRuns></Paragraph></Paragraphs>
+        <Paragraphs><Paragraph><TextRuns>
+          <TextRun>
+            <Value>="02 // TREND — " &amp; UCase(Split(First(Fields!Metrikler.Value,"Kayit") &amp; " ·", " ·")(0))</Value>
+            <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><FontWeight>Bold</FontWeight><Color>#35E0E8</Color></Style>
+          </TextRun>
+          <TextRun>
+            <Value>=IIf(Count(Fields!Tahmin.Value, "Trend") &gt; 0, "   ■ GERÇEKLEŞEN", "")</Value>
+            <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><Color>#35E0E8</Color></Style>
+          </TextRun>
+          <TextRun>
+            <Value>=IIf(Count(Fields!Tahmin.Value, "Trend") &gt; 0, "  ■ TAHMİN %80", "")</Value>
+            <Style><FontFamily>Consolas</FontFamily><FontSize>7pt</FontSize><Color>#F2B33D</Color></Style>
+          </TextRun>
+        </TextRuns></Paragraph></Paragraphs>
         <Style><PaddingLeft>2pt</PaddingLeft></Style>
       </Textbox>
 
@@ -393,19 +423,64 @@ ORDER BY Sira</CommandText>
             </ChartMember>
           </ChartMembers>
         </ChartCategoryHierarchy>
-        <ChartSeriesHierarchy><ChartMembers><ChartMember><Label>Deger</Label></ChartMember></ChartMembers></ChartSeriesHierarchy>
+        <!-- Gerceklesen ve tahmin AYRI seri. Tek seride palet, veri noktasi
+             rengini eziyor (bkz. hedef grafigi) — ayni cozum: iki sutun
+             serisi, yigilmis. Her kategoride ikisinden yalnizca biri dolu,
+             oteki NULL; yigilma bu yuzden toplama yapmaz, sutunlar yan yana
+             kaymadan ayni yerde cizilir.
+             Kestirim araligi iki KESIKLI CIZGI: sutun + cizgi ayni alanda
+             sorunsuz birlesir, Range/ErrorBar ise yigilmis sutunla birlesmez.
+             Cizgiler yalnizca tahmin kategorilerinde deger bulur. -->
+        <ChartSeriesHierarchy>
+          <ChartMembers>
+            <ChartMember><Label>Gerçekleşen</Label></ChartMember>
+            <ChartMember><Label>Tahmin</Label></ChartMember>
+            <ChartMember><Label>%80 üst</Label></ChartMember>
+            <ChartMember><Label>%80 alt</Label></ChartMember>
+          </ChartMembers>
+        </ChartSeriesHierarchy>
         <ChartData>
           <ChartSeriesCollection>
             <ChartSeries Name="sTrend">
               <ChartDataPoints><ChartDataPoint>
-                <ChartDataPointValues><Y>=Sum(Fields!Deger.Value)</Y></ChartDataPointValues>
+                <ChartDataPointValues><Y>=Sum(Fields!Gercek.Value)</Y></ChartDataPointValues>
                 <Style><BackgroundColor>#0B8F98</BackgroundColor>
                        <BackgroundGradientType>TopBottom</BackgroundGradientType>
                        <BackgroundGradientEndColor>#35E0E8</BackgroundGradientEndColor></Style>
               </ChartDataPoint></ChartDataPoints>
-              <Type>Column</Type><Subtype>Plain</Subtype>
+              <Type>Column</Type><Subtype>Stacked</Subtype>
               <ValueAxisName>V2</ValueAxisName><CategoryAxisName>K2</CategoryAxisName><ChartAreaName>A2</ChartAreaName>
             </ChartSeries>
+            <ChartSeries Name="sTahmin">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues><Y>=Sum(Fields!Tahmin.Value)</Y></ChartDataPointValues>
+                <!-- Sutun ICI BOS, kenarligi kesikli. Iki nedeni var:
+                     (1) %80 araligin ALT cizgisi sutunun icinde kaliyor;
+                         dolu sutunda gorunmez oluyordu.
+                     (2) Gorsel siralama da dogru cikiyor — gerceklesen
+                         dolu, tahmin bos: biri olcum, oteki kestirim. -->
+                <Style><BackgroundColor>#101821</BackgroundColor>
+                       <Border><Color>#F2B33D</Color><Style>Dashed</Style><Width>1pt</Width></Border></Style>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Column</Type><Subtype>Stacked</Subtype>
+              <ValueAxisName>V2</ValueAxisName><CategoryAxisName>K2</CategoryAxisName><ChartAreaName>A2</ChartAreaName>
+            </ChartSeries>
+            <ChartSeries Name="sTahminUst">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues><Y>=Sum(Fields!TahminUst.Value)</Y></ChartDataPointValues>
+                <Style><Border><Color>#FFD37A</Color><Style>Dashed</Style><Width>2pt</Width></Border></Style>
+                <ChartMarker><Type>None</Type></ChartMarker>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Line</Type><Subtype>Plain</Subtype>
+              <ValueAxisName>V2</ValueAxisName><CategoryAxisName>K2</CategoryAxisName><ChartAreaName>A2</ChartAreaName>            </ChartSeries>
+            <ChartSeries Name="sTahminAlt">
+              <ChartDataPoints><ChartDataPoint>
+                <ChartDataPointValues><Y>=Sum(Fields!TahminAlt.Value)</Y></ChartDataPointValues>
+                <Style><Border><Color>#FFD37A</Color><Style>Dashed</Style><Width>2pt</Width></Border></Style>
+                <ChartMarker><Type>None</Type></ChartMarker>
+              </ChartDataPoint></ChartDataPoints>
+              <Type>Line</Type><Subtype>Plain</Subtype>
+              <ValueAxisName>V2</ValueAxisName><CategoryAxisName>K2</CategoryAxisName><ChartAreaName>A2</ChartAreaName>            </ChartSeries>
           </ChartSeriesCollection>
         </ChartData>
         <ChartAreas>
@@ -433,8 +508,21 @@ ORDER BY Sira</CommandText>
           </ChartArea>
         </ChartAreas>
         <ChartLegends><ChartLegend Name="L2"><Style><Border><Style>None</Style></Border></Style><Hidden>true</Hidden></ChartLegend></ChartLegends>
+        <ChartNoDataMessage Name="N2">
+          <Caption>Bu cevapta dönem serisi yok.</Caption>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><Color>#3E5C70</Color></Style>
+        </ChartNoDataMessage>
         <Palette>Custom</Palette>
-        <ChartCustomPaletteColors><ChartCustomPaletteColor>#35E0E8</ChartCustomPaletteColor></ChartCustomPaletteColors>
+        <!-- Palet sirasi seri sirasidir: gerceklesen, tahmin, ust, alt.
+             Sutun dolgusunu VERI NOKTASI degil PALET belirliyor (gradyan
+             verilmediginde palet eziyor) — tahminin "bos" gorunmesi bu
+             yuzden burada ayarlanmak zorunda: fon rengiyle ayni. -->
+        <ChartCustomPaletteColors>
+          <ChartCustomPaletteColor>#35E0E8</ChartCustomPaletteColor>
+          <ChartCustomPaletteColor>#101821</ChartCustomPaletteColor>
+          <ChartCustomPaletteColor>#FFD37A</ChartCustomPaletteColor>
+          <ChartCustomPaletteColor>#FFD37A</ChartCustomPaletteColor>
+        </ChartCustomPaletteColors>
         <Style><Border><Style>None</Style></Border><BackgroundColor>#070B10</BackgroundColor></Style>
       </Chart>
 
@@ -518,6 +606,10 @@ ORDER BY Sira</CommandText>
           </ChartArea>
         </ChartAreas>
         <ChartLegends><ChartLegend Name="L3"><Style><Border><Style>None</Style></Border></Style><Hidden>true</Hidden></ChartLegend></ChartLegends>
+        <ChartNoDataMessage Name="N3">
+          <Caption>Bu cevapta hedef karşılaştırması yok.</Caption>
+          <Style><FontFamily>Consolas</FontFamily><FontSize>8pt</FontSize><Color>#3E5C70</Color></Style>
+        </ChartNoDataMessage>
         <!-- Iki seri var: palet artik NOKTA bazinda degil SERI bazinda renk
              atiyor. Sira onemli: 1. seri hedefi tutan (yesil), 2. seri altinda
              kalan (kirmizi). Veri noktasi Style'i palet tarafindan eziliyordu. -->

@@ -22,6 +22,12 @@ from lib import tahmin
 from lib.yorumlayici import sayi_bicimle, donem_dogal, metrik_ad_sade, tr_buyuk_ilk
 
 
+def _ondalik(x):
+    """R² gibi birimsiz sayılar için Türkçe ondalık ayırıcı. Cevabın geri
+    kalanı virgül kullanırken künyede nokta görmek tutarsız duruyordu."""
+    return ('%.2f' % (x or 0)).replace('.', ',')
+
+
 def _met(spec):
     return S.metrik_bul(spec['metrikler'][0])
 
@@ -79,7 +85,15 @@ def _sonraki_donemler(son_etiket, adet):
 
 def _baglam(etiketler, degerler, met, ek_noktalar=None):
     """Cevap kartı serisi. Tahmin noktaları 'tahmin' serisi olarak ayrı
-    işaretlenir; kartta gerçekleşenle aynı renge girmemeleri için."""
+    işaretlenir; kartta gerçekleşenle aynı renge girmemeleri için.
+
+    Kestirim aralığı 'tahmin_alt' / 'tahmin_ust' serileriyle taşınır —
+    kart bunları kesikli çizgi olarak çiziyor. Nokta tahmini aralıksız
+    göstermek, olmayan bir kesinlik iddia etmek olurdu.
+
+    Sıra numarası gerçekleşenin ardından devam eder; birleşik anahtar
+    (KayitId, Seri, Sira) aynı sırayı farklı seride tutmaya izin
+    verdiği için üç tahmin serisi aynı sıra numarasını paylaşır."""
     olcek = 1000000.0 if met['birim'] == 'TRY' else 1.0
     cikti = []
     for i, (e, d) in enumerate(zip(etiketler, degerler), start=1):
@@ -88,6 +102,11 @@ def _baglam(etiketler, degerler, met, ek_noktalar=None):
     for j, n in enumerate(ek_noktalar or [], start=len(etiketler) + 1):
         cikti.append({'seri': 'tahmin', 'sira': j, 'etiket': n['etiket'],
                       'deger': n['deger'] / olcek})
+        if n.get('alt') is not None and n.get('ust') is not None:
+            cikti.append({'seri': 'tahmin_alt', 'sira': j,
+                          'etiket': n['etiket'], 'deger': n['alt'] / olcek})
+            cikti.append({'seri': 'tahmin_ust', 'sira': j,
+                          'etiket': n['etiket'], 'deger': n['ust'] / olcek})
     return cikti
 
 
@@ -123,8 +142,9 @@ def _tahmin(spec, ayar):
                          'seviye bildirildi.' % tr_buyuk_ilk(ad)),
             'satirlar': [], 'baglam': _baglam(etiketler, degerler, met),
             'sorgu': sorgu,
-            'belirsizlikler': ['Doğrusal eğilim açıklayıcılığı R²=%.2f, eşik %.2f — '
-                               'tahmin bilinçli olarak üretilmedi.' % (t['r2'], t['esik'])],
+            'belirsizlikler': ['Doğrusal eğilim açıklayıcılığı R²=%s, eşik %s — '
+                               'tahmin bilinçli olarak üretilmedi.'
+                               % (_ondalik(t['r2']), _ondalik(t['esik']))],
             'vurgu': {'etiket': 'ortalama · %d dönem' % len(degerler), 'deger': ort},
         }
 
@@ -145,9 +165,10 @@ def _tahmin(spec, ayar):
                            sayi_bicimle(n['ust'], met['birim'])))
 
     belirsizlik = [
-        'TAHMİN — gerçekleşme değil. Yöntem: %s, %d dönem geçmiş, R²=%.2f.'
-        % (t['yontem'], t['gozlem'], t['r2']),
-        'Aralık %%80 kestirim aralığıdır; gerçekleşme beşte bir olasılıkla dışına çıkar.',
+        'TAHMİN — gerçekleşme değil. Yöntem: %s, %d dönem geçmiş, R²=%s.'
+        % (t['yontem'], t['gozlem'], _ondalik(t['r2'])),
+        # Bu dize % işlecinden GEÇMEZ; %% yazmak kullanıcıya "%%80" gösterir.
+        'Aralık %80 kestirim aralığıdır; gerçekleşme beşte bir olasılıkla dışına çıkar.',
     ]
     if t['kirpildi']:
         belirsizlik.append('İstenen ufuk %d döneme kırpıldı: %d dönem geçmişle daha '
