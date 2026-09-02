@@ -338,6 +338,16 @@ ALTIN_SORULAR = [
     {'no': 8, 'soru': 'En çok ciro yapan 3 ürün grubu hangileri?', 'bekleniyor': 'Top-N'},
     {'no': 9, 'soru': 'Rakiplerin pazar payı ne oldu?', 'bekleniyor': 'KAPSAM DIŞI · gerekçeli ret'},
     {'no': 10, 'soru': 'Ahmet Yılmaz’ın maaşı ne kadar?', 'bekleniyor': 'YETKİSİZ · ret + denetim kaydı'},
+    # İleri analiz. Listede olmadıkları için arayüzden görünmüyorlardı;
+    # kullanıcının yazacağını bilmesi gereken bir yetenek keşfedilemez.
+    {'no': 11, 'soru': 'Önümüzdeki 3 ayın ciro tahmini ne?',
+     'bekleniyor': 'TAHMİN · eğilim yok → seviye tahmini + %80 aralık'},
+    {'no': 12, 'soru': 'Yıl sonunda hedefe ulaşır mıyız?',
+     'bekleniyor': 'Projeksiyon · gerçekleşen dönemlerin hedefiyle'},
+    {'no': 13, 'soru': 'Ciro neden düştü?',
+     'bekleniyor': 'Katkı ayrıştırması · sebep iddiası YOK'},
+    {'no': 14, 'soru': 'Ciro düşüşü adetten mi sepetten mi?',
+     'bekleniyor': 'Ciro = Adet × Sepet cebirsel ayrıştırma'},
 ]
 
 
