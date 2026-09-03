@@ -92,6 +92,44 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
       </Fields>
     </DataSet>
 
+    <!-- Gerçekleşen + tahmin, TEK eksende.
+         Kaynak modeldeki CiroSerisi tablosu; tahmin satırlarını oraya
+         ajan yazıyor (04-ajan-py/araclar/tahmin_yayinla.py). Tahmini
+         DAX'ta yeniden hesaplamıyoruz: aynı soruya ajan ve dashboard
+         farklı sayı veremez.
+
+         Dönem süzgeci yalnız GERÇEKLEŞEN satırlara uygulanıyor. Tahmin
+         dönemleri (2026-09…) pDonem listesinde yok — süzgece soksaydık
+         tahmin hiçbir seçimde görünmezdi. Tahmin bir boyut değil,
+         grafiğin üzerine düşen bir katman. -->
+    <DataSet Name="TrendSeri">
+      <Query>
+        <DataSourceName>dsSSAS</DataSourceName>
+        <CommandType>Text</CommandType>
+        <CommandText>="EVALUATE" &amp; vbCrLf &amp;
+"SUMMARIZECOLUMNS (" &amp; vbCrLf &amp;
+"  CiroSerisi[DonemKey], CiroSerisi[Dönem]," &amp; vbCrLf &amp;
+"  FILTER ( ALL ( CiroSerisi )," &amp; vbCrLf &amp;
+"    CiroSerisi[Tip] = ""Tahmin"" || CiroSerisi[Dönem] IN { """ &amp;
+Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
+"  ""Ciro"", [Gerçekleşen Ciro]," &amp; vbCrLf &amp;
+"  ""Hedef"", [Aylık Hedef]," &amp; vbCrLf &amp;
+"  ""Tahmin"", [Tahmin]," &amp; vbCrLf &amp;
+"  ""TahminAlt"", [Tahmin %80 Alt]," &amp; vbCrLf &amp;
+"  ""TahminUst"", [Tahmin %80 Üst]" &amp; vbCrLf &amp;
+")" &amp; vbCrLf &amp; "ORDER BY CiroSerisi[DonemKey]"</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="DonemKey"><DataField>CiroSerisi[DonemKey]</DataField><rd:TypeName>System.Int64</rd:TypeName></Field>
+        <Field Name="DonemAd"><DataField>CiroSerisi[Dönem]</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="Ciro"><DataField>[Ciro]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Hedef"><DataField>[Hedef]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="Tahmin"><DataField>[Tahmin]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="TahminAlt"><DataField>[TahminAlt]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+        <Field Name="TahminUst"><DataField>[TahminUst]</DataField><rd:TypeName>System.Decimal</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+
     <!-- Bölge kırılımı -->
     <DataSet Name="Bolge">
       <Query>
@@ -447,7 +485,7 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
             <Left>0in</Left>
             <Height>2.3in</Height>
             <Width>7.4in</Width>
-            <DataSetName>Trend</DataSetName>
+            <DataSetName>TrendSeri</DataSetName>
             <ChartCategoryHierarchy>
               <ChartMembers>
                 <ChartMember>
@@ -473,6 +511,15 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
                 <ChartMember>
                   <Label>Hedef</Label>
                 </ChartMember>
+                <ChartMember>
+                  <Label>Tahmin</Label>
+                </ChartMember>
+                <ChartMember>
+                  <Label>%80 üst</Label>
+                </ChartMember>
+                <ChartMember>
+                  <Label>%80 alt</Label>
+                </ChartMember>
               </ChartMembers>
             </ChartSeriesHierarchy>
             <ChartData>
@@ -481,7 +528,7 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
                   <ChartDataPoints>
                     <ChartDataPoint>
                       <ChartDataPointValues>
-                        <Y>=Sum(Fields!NetCiro.Value)/1000000</Y>
+                        <Y>=Sum(Fields!Ciro.Value)/1000000</Y>
                       </ChartDataPointValues>
                       <Style>
                         <BackgroundColor>#1B5C77</BackgroundColor>
@@ -506,11 +553,89 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
                   <ChartDataPoints>
                     <ChartDataPoint>
                       <ChartDataPointValues>
-                        <Y>=Sum(Fields!Hedef.Value)/1000000</Y>
+                        <Y>=IIf(IsNothing(Sum(Fields!Hedef.Value)), Nothing, Sum(Fields!Hedef.Value)/1000000)</Y>
                       </ChartDataPointValues>
                       <Style>
                         <BackgroundColor>#A9541E</BackgroundColor>
                       </Style>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Line</Type>
+                  <Subtype>Plain</Subtype>
+                  <ValueAxisName>Birincil</ValueAxisName>
+                  <CategoryAxisName>Kategori</CategoryAxisName>
+                  <ChartAreaName>Alan</ChartAreaName>
+                </ChartSeries>
+                <!-- TAHMİN · içi açık, kesikli kenarlıklı sütun. Renk ailesi
+                     gerçekleşenle aynı (mavi) ama açık ve kesikli: "aynı ölçü,
+                     henüz gerçekleşmedi". Sütun tıklanınca ajana tahmin
+                     sorusuyla gidiyor — sayının nasıl çıktığı orada yazıyor. -->
+                <ChartSeries Name="serTahmin">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=IIf(IsNothing(Sum(Fields!Tahmin.Value)), Nothing, Sum(Fields!Tahmin.Value)/1000000)</Y>
+                      </ChartDataPointValues>
+                      <Style>
+                        <BackgroundColor>#DCE7EE</BackgroundColor>
+                        <Border>
+                          <Color>#1B5C77</Color>
+                          <Style>Dashed</Style>
+                          <Width>1pt</Width>
+                        </Border>
+                      </Style>
+                      <ActionInfo>
+                        <Actions>
+                          <Action>
+                            <Hyperlink>=Parameters!pAjanUrl.Value &amp; "/?soru=" &amp;
+                    System.Uri.EscapeDataString("Önümüzdeki 3 ayın ciro tahmini ne?")</Hyperlink>
+                          </Action>
+                        </Actions>
+                      </ActionInfo>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Column</Type>
+                  <Subtype>Plain</Subtype>
+                  <ValueAxisName>Birincil</ValueAxisName>
+                  <CategoryAxisName>Kategori</CategoryAxisName>
+                  <ChartAreaName>Alan</ChartAreaName>
+                </ChartSeries>
+                <ChartSeries Name="serTahminUst">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=IIf(IsNothing(Sum(Fields!TahminUst.Value)), Nothing, Sum(Fields!TahminUst.Value)/1000000)</Y>
+                      </ChartDataPointValues>
+                      <Style>
+                        <Border>
+                          <Color>#5E8CA8</Color>
+                          <Style>Dashed</Style>
+                          <Width>1.5pt</Width>
+                        </Border>
+                      </Style>
+                      <ChartMarker><Type>None</Type></ChartMarker>
+                    </ChartDataPoint>
+                  </ChartDataPoints>
+                  <Type>Line</Type>
+                  <Subtype>Plain</Subtype>
+                  <ValueAxisName>Birincil</ValueAxisName>
+                  <CategoryAxisName>Kategori</CategoryAxisName>
+                  <ChartAreaName>Alan</ChartAreaName>
+                </ChartSeries>
+                <ChartSeries Name="serTahminAlt">
+                  <ChartDataPoints>
+                    <ChartDataPoint>
+                      <ChartDataPointValues>
+                        <Y>=IIf(IsNothing(Sum(Fields!TahminAlt.Value)), Nothing, Sum(Fields!TahminAlt.Value)/1000000)</Y>
+                      </ChartDataPointValues>
+                      <Style>
+                        <Border>
+                          <Color>#5E8CA8</Color>
+                          <Style>Dashed</Style>
+                          <Width>1.5pt</Width>
+                        </Border>
+                      </Style>
+                      <ChartMarker><Type>None</Type></ChartMarker>
                     </ChartDataPoint>
                   </ChartDataPoints>
                   <Type>Line</Type>
@@ -605,7 +730,7 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
             </ChartLegends>
             <ChartTitles>
               <ChartTitle Name="Baslik">
-                <Caption>Aylık net ciro ve hedef</Caption>
+                <Caption>=IIf(Sum(Fields!Tahmin.Value, "TrendSeri") &gt; 0, "Aylık net ciro, hedef ve tahmin (%80 aralık)", "Aylık net ciro ve hedef")</Caption>
                 <Style>
                   <FontFamily>Segoe UI</FontFamily>
                   <FontSize>10pt</FontSize>
@@ -616,9 +741,14 @@ Join(Parameters!pDonem.Value, """, """) &amp; """ } )," &amp; vbCrLf &amp;
               </ChartTitle>
             </ChartTitles>
             <Palette>Custom</Palette>
+            <!-- Sıra = seri sırası. Sütun dolgusunu veri noktası değil
+                 PALET belirliyor; tahminin açık mavisi bu yüzden burada. -->
             <ChartCustomPaletteColors>
               <ChartCustomPaletteColor>#1B5C77</ChartCustomPaletteColor>
               <ChartCustomPaletteColor>#A9541E</ChartCustomPaletteColor>
+              <ChartCustomPaletteColor>#DCE7EE</ChartCustomPaletteColor>
+              <ChartCustomPaletteColor>#5E8CA8</ChartCustomPaletteColor>
+              <ChartCustomPaletteColor>#5E8CA8</ChartCustomPaletteColor>
             </ChartCustomPaletteColors>
             <Style>
               <Border>

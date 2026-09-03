@@ -12,10 +12,11 @@
   kullanıcı SSAS üzerinde sunucu yöneticisi olmalı.
 #>
 param(
-    [string]$Server   = 'localhost',
-    [string]$TmslFile = (Join-Path $PSScriptRoot 'SatisOzet.tmsl.json'),
-    [string]$Database = 'POC_SatisOzet',
-    [switch]$SadeceIsle    # modeli yeniden dağıtmadan yalnızca veri tazele
+    [string]$Server   = 'localhost\TABULAR',
+    [string]$TmslFile = (Join-Path $PSScriptRoot 'SatisModel.tmsl.json'),
+    [string]$Database = 'POC_Satis',
+    [string]$Tablo    = '',   # verilirse yalnız o tablo işlenir (tablo düzeyi TMSL)
+    [switch]$SadeceIsle       # modeli yeniden dağıtmadan yalnızca veri tazele
 )
 
 $ErrorActionPreference = 'Stop'
@@ -72,33 +73,49 @@ if (-not $SadeceIsle) {
     Calistir-Xmla -Sunucu $Server -Komut $tmsl -Etiket 'model olusturuldu / guncellendi (createOrReplace)'
 }
 
-# Veriyi yükle
+# Veriyi yükle. -Tablo verildiyse yalnız o tablo: tek tablo eklerken
+# tum modeli islemek hem gereksiz hem de uzun.
+if ($Tablo) {
+    $hedef = "{ ""database"": ""$Database"", ""table"": ""$Tablo"" }"
+    $etiket = "tablo islendi (full refresh · $Tablo)"
+} else {
+    $hedef = "{ ""database"": ""$Database"" }"
+    $etiket = 'veri islendi (full refresh)'
+}
 $refresh = @"
 {
   "refresh": {
     "type": "full",
-    "objects": [ { "database": "$Database" } ]
+    "objects": [ $hedef ]
   }
 }
 "@
-Calistir-Xmla -Sunucu $Server -Komut $refresh -Etiket 'veri islendi (full refresh)'
+Calistir-Xmla -Sunucu $Server -Komut $refresh -Etiket $etiket
 
-# Doğrulama: satır sayısı ve bir ölçü
+# Doğrulama: model gözatıcısı ile bir DAX çalıştır. (Eskiden burada
+# 04-ajan/lib/dax-sorgu.ps1 çağrılıyordu; Node sürümü emekliye
+# ayrılınca o dosya kalmadı, doğrulama adımı sessizce kırılmıştı.)
 Write-Host ''
 Write-Host 'Dogrulama'
 Write-Host ('-' * 50)
-$dogrulamaDax = 'EVALUATE ROW ( "Satir", COUNTROWS ( SatisOzet ), "NetCiro", [Net Ciro], "EnYuksekAy", [En Yüksek Ay] )'
+$dax = if ($Tablo) {
+    "EVALUATE ROW ( ""Satir"", COUNTROWS ( '$Tablo' ) )"
+} else {
+    'EVALUATE ROW ( "Satir", COUNTROWS ( Satis ), "NetCiro", [Net Ciro], "EnYuksekAy", [En Yüksek Ay] )'
+}
+# DAX'i DOSYADAN geciriyoruz: PowerShell, native exe argumaninin icindeki
+# cift tirnaklari yiyor ve sorgu bozuluyor. Bu tuzaga bu depoda birkac kez
+# dusuldu; kalici cozum dosya.
 $gecici = Join-Path $env:TEMP ('poc_dogrula_' + $PID + '.dax')
-$dogrulamaDax | Out-File -FilePath $gecici -Encoding utf8
+[IO.File]::WriteAllText($gecici, $dax, (New-Object Text.UTF8Encoding $false))
+$gozat = Join-Path $PSScriptRoot '..\04-ajan-py\araclar\model_gozat.py'
+$py = if (Test-Path 'C:\Python312\python.exe') { 'C:\Python312\python.exe' } else { 'python' }
 try {
-    & (Join-Path $PSScriptRoot '..\04-ajan\lib\dax-sorgu.ps1') -Server $Server -Database $Database -QueryFile $gecici
+    & $py $gozat --sunucu $Server --model $Database --dax-dosya $gecici
 } finally {
     Remove-Item $gecici -ErrorAction SilentlyContinue
 }
 
 Write-Host ''
-Write-Host 'Bitti. Ajani su sekilde SSAS moduna alabilirsiniz:'
-Write-Host "  $env:POC_SSAS_SUNUCU = '$Server'"
-Write-Host '  $env:POC_MOTOR = "dax"'
-Write-Host '  node sunucu.js'
+Write-Host 'Bitti.'
 Write-Host ''

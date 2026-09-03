@@ -1,0 +1,120 @@
+{
+  "createOrReplace": {
+    "object": {
+      "database": "POC_Satis",
+      "table": "CiroSerisi"
+    },
+    "table": {
+      "name": "CiroSerisi",
+      "description": "Aylık ciro serisi: gerçekleşen dönemler + ajanın yayınladığı tahmin dönemleri. Dashboard trend grafiğinin kaynağı. Donem boyutuyla ilişkisi yoktur — gelecek dönemler o boyutta yok.",
+      "columns": [
+        {
+          "name": "DonemKey",
+          "dataType": "int64",
+          "sourceColumn": "DonemKey",
+          "isHidden": true,
+          "summarizeBy": "none"
+        },
+        {
+          "name": "Dönem",
+          "dataType": "string",
+          "sourceColumn": "DonemAd",
+          "sortByColumn": "DonemKey",
+          "summarizeBy": "none",
+          "description": "2026-08 gibi. Gerçekleşen ve tahmin dönemleri aynı biçimde."
+        },
+        {
+          "name": "Tip",
+          "dataType": "string",
+          "sourceColumn": "Tip",
+          "summarizeBy": "none",
+          "description": "Gerçekleşen | Tahmin. Grafikte rengi ve dolgu biçimini bu ayırır."
+        },
+        {
+          "name": "Ciro",
+          "dataType": "decimal",
+          "sourceColumn": "Ciro",
+          "isHidden": true,
+          "summarizeBy": "sum"
+        },
+        {
+          "name": "Hedef",
+          "dataType": "decimal",
+          "sourceColumn": "Hedef",
+          "isHidden": true,
+          "summarizeBy": "sum"
+        },
+        {
+          "name": "TahminDeger",
+          "dataType": "decimal",
+          "sourceColumn": "Tahmin",
+          "isHidden": true,
+          "summarizeBy": "sum",
+          "description": "Tahmin degeri. Ad kolon/olcu cakismasini onlemek icin farkli."
+        },
+        {
+          "name": "TahminAlt",
+          "dataType": "decimal",
+          "sourceColumn": "TahminAlt",
+          "isHidden": true,
+          "summarizeBy": "sum"
+        },
+        {
+          "name": "TahminUst",
+          "dataType": "decimal",
+          "sourceColumn": "TahminUst",
+          "isHidden": true,
+          "summarizeBy": "sum"
+        }
+      ],
+      "measures": [
+        {
+          "name": "Gerçekleşen Ciro",
+          "expression": "SUM ( CiroSerisi[Ciro] )",
+          "formatString": "#,0 \"TL\"",
+          "displayFolder": "05 Seri (dashboard)",
+          "description": "Gerçekleşen net ciro. Tahmin dönemlerinde boştur."
+        },
+        {
+          "name": "Aylık Hedef",
+          "expression": "SUM ( CiroSerisi[Hedef] )",
+          "formatString": "#,0 \"TL\"",
+          "displayFolder": "05 Seri (dashboard)",
+          "description": "Gerçekleşen dönemin hedefi. Tahmin dönemlerinde boştur — gelecek için onaylı hedef yok."
+        },
+        {
+          "name": "Tahmin",
+          "expression": "SUM ( CiroSerisi[TahminDeger] )",
+          "formatString": "#,0 \"TL\"",
+          "displayFolder": "05 Seri (dashboard)",
+          "description": "TAHMİN — gerçekleşme değil. Ajanın lib/tahmin.py hesabının yayınlanmış hâli. Yalnız gelecek dönemlerde doludur."
+        },
+        {
+          "name": "Tahmin %80 Alt",
+          "expression": "SUM ( CiroSerisi[TahminAlt] )",
+          "formatString": "#,0 \"TL\"",
+          "displayFolder": "05 Seri (dashboard)",
+          "description": "%80 kestirim aralığının alt sınırı."
+        },
+        {
+          "name": "Tahmin %80 Üst",
+          "expression": "SUM ( CiroSerisi[TahminUst] )",
+          "formatString": "#,0 \"TL\"",
+          "displayFolder": "05 Seri (dashboard)",
+          "description": "%80 kestirim aralığının üst sınırı."
+        }
+      ],
+      "partitions": [
+        {
+          "name": "CiroSerisi",
+          "mode": "import",
+          "source": {
+            "type": "query",
+            "dataSource": "SqlServer localhost POC_SatisYZ",
+            "query": "SELECT DonemKey, DonemAd, Tip, Ciro, Hedef, Tahmin, TahminAlt, TahminUst FROM dbo.vw_CiroSerisi"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -70,7 +70,10 @@ kpiCiro    card                            Satis.Net Ciro
 kpiHedef   card                            Satis.Hedef Gerçekleşme %
 kpiAdet    card                            Satis.Satış Adet
 kpiSepet   card                            Satis.Ortalama Sepet
-grfTrend   lineClusteredColumnComboChart   Donem.Dönem, Satis.Net Ciro, Satis.Hedef
+grfTrend   lineClusteredColumnComboChart   CiroSerisi.Dönem,
+                                           CiroSerisi.Gerçekleşen Ciro, CiroSerisi.Tahmin,
+                                           CiroSerisi.Aylık Hedef,
+                                           CiroSerisi.Tahmin %80 Üst, CiroSerisi.Tahmin %80 Alt
 tblBolge   tableEx                         Bolge.Bölge, Satis.Net Ciro, Satis.Hedef Gerçekleşme %
 mtrUrun    pivotTable                      UrunGrubu.Ürün Grubu, Kanal.Kanal, Satis.Net Ciro
 tblAy      tableEx                         Donem.Dönem, Satis.Net Ciro, Satis.Hedef,
@@ -80,6 +83,68 @@ tblAy      tableEx                         Donem.Dönem, Satis.Net Ciro, Satis.H
 
 Görsellerin biçim özellikleri (renk, gösterim birimi, düğme aksiyonu) yumuşak
 başarısız olur: yanlışsa görsel varsayılanına döner, dosya bozulmaz.
+
+Önizleme: `onizleme/SatisDashboardPBI.png`. Yenilemek için:
+
+```powershell
+node tarayici-goruntu.js http://localhost/Reports/powerbi/SatisDashboardPBI `
+     onizleme\SatisDashboardPBI.png 18
+```
+
+### Doğrulama neden tarayıcıda yapılıyor
+
+`.pbix` sunucu tarafında **çizdirilemiyor** — PBIRS REST v2.0, `PowerBIReport`
+için `Render` işlemi sunmuyor (yalnız `Upload`, `CheckDataSourceConnection`,
+`AccessToken`). Bu yüzden `tarayici-goruntu.js` headless tarayıcıyı CDP ile
+sürüyor: PNG alıyor, konsol hatalarını topluyor ve görsel sayısını sayıyor.
+RDL için gerek yok, onu sunucu PNG olarak veriyor.
+
+Betiği yazarken iki şeyi ölçmek gerekti:
+
+| Tuzak | Belirti | Çözüm |
+|---|---|---|
+| Rapor tuvali **iframe** içinde (`/powerbi/?id=…`) | üst belgede `visual-container` sayısı 0 → çalışan rapor bozuk sanılıyor | aynı kökenli iframe'ler de taranıyor |
+| `--headless=new` ile `--screenshot` çıktı üretmiyor | dosya hiç oluşmuyor, hata da yok | CDP `Page.captureScreenshot` |
+
+Aynı iş önce PowerShell `ClientWebSocket` ile yazıldı ve iki yerde kırıldı:
+`about:blank`'ten `Page.navigate` ile gezinmek hedefi değiştirip soketi sessizce
+koparıyor, ekran görüntüsünün base64'ü ise onlarca çerçeveye bölünüyor ve elle
+birleştirmek güvenilir olmadı. Node'un yerleşik `WebSocket`'i ikisini de çözüyor.
+
+### Konsolda kalıcı iki hata — zararsız
+
+Bu PBIRS kurulumunda her raporda görünüyorlar, **çalışan raporda da**:
+
+```
+GET /powerbi/libs/scripts/stylelibrary.js → 404
+NullInjectorError: No provider for InjectionToken PBICopilotProxy!
+```
+
+Dosya kurulumda hiç yok (`Get-ChildItem -Recurse -Filter stylelibrary*` boş
+dönüyor), Copilot sağlayıcısı da bu sürümde kayıtlı değil. Teşhis sırasında
+bunları suçlamak zaman kaybı; ayırt edici hata mesajını aramak gerekiyor.
+
+### Tahmin serisi eklerken çıkan gerçek hata
+
+Trend görseline tahmin serileri eklendiğinde rapor **hiç çizilmedi** — tuval
+"Loading data…"da kaldı ve konsolda şu vardı:
+
+```
+TypeError: Cannot read properties of undefined (reading 'visual')
+  at g.getInheritParentColors
+```
+
+Sunucu tarafı sağlamdı: `RSPowerBI` günlüğünde DAX sorguları çevrilmiş ve
+hepsi 200 dönmüştü. Yani hata istemcide, renk çözümlemesinde.
+
+Teşhisin kilidini açan adım, **değişiklikten önceki `.pbix`'i geri yükleyip
+denemek** oldu: o çizdi. Böylece "ortam bozuldu" seçeneği elendi ve hata
+kesinlikle yapılan değişikte arandı. Sonrasında model ölçüleri yeniden
+adlandırılıp tablo yeniden dağıtıldığında aynı görsel yapılandırması sorunsuz
+çizdi — belirti, istemcinin `dataPoint` seçicisindeki `metadata` adını o anki
+şemada çözememesiyle uyumlu. Ders: **model değişikliğinden sonra `.pbix`'i
+yeniden yükleyip sayfayı tazelemek**, ve renk seçicisi eklerken metadata adının
+modelde birebir var olduğunu doğrulamak.
 
 ---
 

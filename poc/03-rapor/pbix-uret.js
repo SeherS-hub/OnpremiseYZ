@@ -32,6 +32,10 @@ const CIKTI  = path.join(__dirname, 'SatisDashboardPBI.pbix');
 const R = {
   teal:    '#1B5C77',
   bakir:   '#A9541E',
+  tahmin:  '#9FBDCE',   // gerceklesenin acik tonu: ayni olcu, henuz olmadi
+  bant:    '#5E8CA8',   // %80 araligin iki cizgisi — rengi TEMADAN gelir:
+                        // cizgi serisine dataPoint secicisi koymak PBIRS
+                        // gorusturucusunu cokertiyor (bkz. poc-tema.json)
   yesil:   '#2C6B4C',
   kirmizi: '#93262B',
   metin:   '#141A20',
@@ -234,18 +238,35 @@ gorseller.push(gorsel('btnAjan', 24, 196, 976, 32, {
   }
 }));
 
-/* --- aylik trend: kolon gerceklesen, cizgi hedef --- */
+/* --- aylik trend: kolon gerceklesen + tahmin, cizgi hedef + %80 bandi ---
+
+   Kaynak CiroSerisi tablosu: gercelesen ve tahmin AYNI eksende durur.
+   Tahminin sayisi burada hesaplanmiyor, ajanin lib/tahmin.py hesabinin
+   yayinlanmis hali okunuyor (araclar/tahmin_yayinla.py). Ayni soruya iki
+   farkli cevap cikmasin diye.
+
+   DONEM DILIMLEYICISI BU GORSELI SUZMEZ: CiroSerisi'nin Donem boyutuyla
+   iliskisi yok — olamaz da, icinde Donem'de bulunmayan gelecek donemler
+   var. Sessiz kalmasin diye baslikta "tum donemler" yaziyor.
+
+   Iki eksen 0-120 arasina SABITLENDI. Sutunlar birincil, cizgiler ikincil
+   eksende; otomatik olcekte iki eksen farkli araliga oturursa bant yanlis
+   yukseklikte cizilir — gorsel bir yalan olur.                          */
 gorseller.push(veriGorseli('grfTrend', 'lineClusteredColumnComboChart', 24, 248, 816, 216,
   {
-    Category: [K('Donem', 'Dönem')],
-    Y:        [O('Satis', 'Net Ciro')],
-    Y2:       [O('Satis', 'Hedef')]
+    Category: [K('CiroSerisi', 'Dönem')],
+    Y:        [O('CiroSerisi', 'Gerçekleşen Ciro'), O('CiroSerisi', 'Tahmin')],
+    Y2:       [O('CiroSerisi', 'Aylık Hedef'),
+               O('CiroSerisi', 'Tahmin %80 Üst'), O('CiroSerisi', 'Tahmin %80 Alt')]
   },
-  'AYLIK CİRO VE HEDEF',
+  'AYLIK CİRO, HEDEF VE TAHMİN (%80 ARALIK) · TÜM DÖNEMLER',
   {
     dataPoint: [
-      { properties: { fill: renk(R.teal)  }, selector: { metadata: 'Satis.Net Ciro' } },
-      { properties: { fill: renk(R.bakir) }, selector: { metadata: 'Satis.Hedef' } }
+      { properties: { fill: renk(R.teal)   }, selector: { metadata: 'CiroSerisi.Gerçekleşen Ciro' } },
+      { properties: { fill: renk(R.tahmin) }, selector: { metadata: 'CiroSerisi.Tahmin' } },
+      { properties: { fill: renk(R.bakir)  }, selector: { metadata: 'CiroSerisi.Aylık Hedef' } },
+      { properties: { fill: renk(R.bant)   }, selector: { metadata: 'CiroSerisi.Tahmin %80 Üst' } },
+      { properties: { fill: renk(R.bant)   }, selector: { metadata: 'CiroSerisi.Tahmin %80 Alt' } }
     ],
     categoryAxis: [{ properties: {
       show: mnt(true), showAxisTitle: mnt(false), gridlineShow: mnt(false),
@@ -254,7 +275,9 @@ gorseller.push(veriGorseli('grfTrend', 'lineClusteredColumnComboChart', 24, 248,
     valueAxis: [{ properties: {
       show: mnt(true), showAxisTitle: mnt(false), fontSize: say(9),
       labelColor: renk(R.ikincil), gridlineColor: renk(R.izgara), secShow: mnt(false),
-      labelDisplayUnits: say(1000000)
+      labelDisplayUnits: say(1000000),
+      start: say(0), end: say(120000000),
+      secStart: say(0), secEnd: say(120000000)
     } }],
     legend: [{ properties: {
       show: mnt(true), position: met('TopCenter'), showTitle: mnt(false),

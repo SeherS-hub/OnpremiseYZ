@@ -241,6 +241,32 @@ Kritik tasarım kararı, spekteki ile aynı: **model SQL/DAX yazmaz, sorgu spesi
 | SatisDashboard | **yalnızca SSAS** (OLEDB-MD sağlayıcısı, DAX sorguları) |
 | CevapKarti | **yalnızca denetim kaydı** — üç grafiğin verisini ajan SSAS'tan çekip cevapla birlikte yazar |
 | CevapKarti · tahmin | trend grafiği `tahmin` · `tahmin_alt` · `tahmin_ust` serilerini de çizer: **içi boş kesikli sütun** = nokta tahmini, iki kesikli çizgi = %80 kestirim aralığı. Gerçekleşen dolu, tahmin boş — bakan kişi ölçümü kestirimden ayırt etsin diye |
+| Dashboard'lar · tahmin | **yalnızca SSAS** — `CiroSerisi` tablosu. Tahminin sayısı DAX'ta yeniden hesaplanmaz, ajanın hesabı yayınlanır (aşağıya bakın) |
+
+### Tahmin nasıl dashboard'lara ulaşıyor
+
+Tahminin aritmetiği ajanın içinde (`04-ajan-py/lib/tahmin.py`). Dashboard'lar SSAS'tan okuyor. Aradaki boşluğu kapatmanın iki yolu vardı:
+
+| Yol | Karar |
+|---|---|
+| Tahmini DAX'ta yeniden yazmak | **reddedildi** — aynı soruya ajan ve dashboard farklı sayı verebilirdi |
+| Ajanın hesabını **yayınlamak** | seçilen |
+
+```
+SSAS (geçmiş seri) → lib/tahmin.py → dbo.Tahmin → SSAS tablosu CiroSerisi
+                                                        ├→ SatisDashboard.rdl
+                                                        └→ SatisDashboardPBI.pbix
+```
+
+```powershell
+py 04-ajan-py\araclar\tahmin_yayinla.py     # hesapla → dbo.Tahmin → CiroSerisi tazele
+```
+
+`dbo.Tahmin` bir hesap yeri değil **yayın** yeri: her satır yöntemini, R²'sini, kaç dönem geçmişle üretildiğini ve üretim zamanını taşır. Modelin veri tazelemesinden sonra çalıştırılmalı — bayat tahmin, yanlış tahminden daha sinsidir.
+
+`CiroSerisi` tablosunun `Donem` boyutuyla **ilişkisi yok ve olmamalı**: içinde `Donem`'de bulunmayan gelecek dönemler var, ilişki kurulsaydı o satırlar boş satıra düşüp grafikten kaybolurdu. Bunun bedeli, `.pbix`'teki dönem dilimleyicisinin trend grafiğini süzmemesi; sessiz kalmasın diye görsel başlığında **"tüm dönemler"** yazıyor. RDL tarafında dönem süzgeci yalnız gerçekleşen satırlara uygulanıyor, tahmin her seçimde görünüyor.
+
+İki grafikte de gerçekleşen **dolu**, tahmin **açık/içi boş** ve kesikli; %80 aralık iki kesikli çizgi. Önizlemeler: `03-rapor/onizleme/SatisDashboard-sayfa1.png` · `03-rapor/onizleme/SatisDashboardPBI.png`
 | SQL Server | modelin besleme kaynağı + denetim kaydı deposu. Hiçbir rapor iş verisi için SQL'e gitmez |
 
 **SSAS erişilemezse ajan SQL'e düşmez**, cevap vermeyi reddeder. Düşseydi aynı soru iki farklı ölçü tanımından cevaplanabilir, sayılar sessizce ayrışırdı — tek kaynak ilkesi bunu yasaklar.
@@ -398,12 +424,26 @@ Planlayıcı maliyeti DAX gidiş-dönüşünün (~750 ms) yanında ölçülemez 
 ```
 poc/
 ├── 01-veri/
-│   └── 01_veritabani_kurulum.sql      kaynak veritabanı + veri (ÇALIŞTIRILDI)
+│   ├── 01_veritabani_kurulum.sql      kaynak veritabanı + veri
+│   ├── 02_ssas_servis_yetkisi.sql     SSAS servis hesabına okuma yetkisi
+│   ├── 03_denetim_kaydi.sql           denetim.AjanKayit + satır tablosu + sproc
+│   ├── 04_aciklama_kolonu.sql         karta açıklama alanı
+│   ├── 05_kayit_serileri.sql          kayıt satırlarına Seri ayrımı
+│   └── 06_tahmin_yayini.sql           dbo.Tahmin + vw_CiroSerisi (tahmin yayını)
 ├── 02-tabular/
-│   ├── SatisOzet.tmsl.json            semantik model tanımı (TMSL)
+│   ├── SatisModel.tmsl.json           semantik model tanımı (TMSL)
+│   ├── ciro-serisi.tmsl.json          CiroSerisi tablosu (gerçekleşen + tahmin)
+│   ├── rol-uyeleri.tmsl.json          RLS rol üyeliği
 │   └── deploy.ps1                     XMLA ile dağıt + işle + doğrula
 ├── 03-rapor/
-│   └── SatisDashboard.rdl             RS dashboard'u + ajan action'ları
+│   ├── SatisDashboard.rdl             RS dashboard'u + ajan action'ları
+│   ├── CevapKarti.rdl                 cevap kartı (denetim artefaktı)
+│   ├── pbix-uret.js                   SatisDashboardPBI.pbix üreteci
+│   ├── pbix-yukle.ps1                 .pbix → PBIRS
+│   ├── rdl-yukle.ps1                  .rdl → PBIRS (SOAP; şema hatasını söyler)
+│   ├── tarayici-goruntu.js            headless tarayıcı + CDP: PNG ve konsol
+│   ├── poc-tema.json                  Power BI teması
+│   └── onizleme/                      doğrulanmış render çıktıları
 ├── 04-ajan-py/
 │   ├── sunucu.py                      HTTP API + statik sunum
 │   ├── lib/sozlesme.py                metrik kaydı · eşanlamlı · boyut kataloğu
@@ -412,9 +452,15 @@ poc/
 │   ├── lib/derleyici_dax.py           spec → DAX
 │   ├── lib/calistir_dax.py            ADOMD.NET köprüsü
 │   ├── lib/yorumlayici.py             sonuç → Türkçe cevap + künye
+│   ├── lib/tahmin.py                  eğilim / seviye tahmini + %80 aralık
+│   ├── lib/katki.py                   katkı ve hacim×sepet ayrıştırması
+│   ├── lib/ileri_analiz.py            tahmin · projeksiyon · katkı cevapları
+│   ├── araclar/model_gozat.py         model gözatıcı (SSMS'te AS yok)
+│   ├── araclar/tahmin_yayinla.py      tahmini dbo.Tahmin'e yayınla
 │   ├── public/index.html              ses + metin arayüzü
-│   ├── test/altin_kume.py             10+1 soruluk regresyon testi
-│   └── denetim/denetim.jsonl          her soru buraya yazılır
+│   ├── test/altin_kume.py             25 soruluk davranış regresyonu
+│   ├── test/tahmin_testi.py           tahmin birim testi (SSAS gerekmez)
+│   └── test/esanlam_testi.py          65 söyleyiş kapsaması
 └── README.md
 ```
 
