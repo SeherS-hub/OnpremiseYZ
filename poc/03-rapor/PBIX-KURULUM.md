@@ -99,12 +99,29 @@ için `Render` işlemi sunmuyor (yalnız `Upload`, `CheckDataSourceConnection`,
 sürüyor: PNG alıyor, konsol hatalarını topluyor ve görsel sayısını sayıyor.
 RDL için gerek yok, onu sunucu PNG olarak veriyor.
 
-Betiği yazarken iki şeyi ölçmek gerekti:
+Betiği yazarken dört tuzağı ölçmek gerekti — dördü de **sessizce yanlış
+ölçüm** üretiyordu, hata vermiyordu:
 
 | Tuzak | Belirti | Çözüm |
 |---|---|---|
 | Rapor tuvali **iframe** içinde (`/powerbi/?id=…`) | üst belgede `visual-container` sayısı 0 → çalışan rapor bozuk sanılıyor | aynı kökenli iframe'ler de taranıyor |
 | `--headless=new` ile `--screenshot` çıktı üretmiyor | dosya hiç oluşmuyor, hata da yok | CDP `Page.captureScreenshot` |
+| Sabit bekleme sonrası yakalama | yarı dolu sayfa; bir kez iyi önizlemenin üstüne "Loading data…" ekranı yazıldı | `querydata` çağrıları durana kadar yoklama |
+| Kırpılmış öğeye tıklama | koordinat DOM'da var ama tıklama arka plana düşüyor, seçim olmuyor | `elementFromPoint` ile noktadaki gerçek öğe doğrulanıyor |
+
+Hazır olma ölçütü için denenip **elenen** iki aday: görsel kabı sayısı
+(kaplar boşken de sayılıyor) ve metnin durağanlaşması (boş kartların metni de
+durağan). Çalışan ölçüt, her görselin kendi veri çağrısını atması: son
+`querydata` yanıtından sonra 3 saniye yenisi gelmiyorsa çizim bitmiştir.
+
+Etkileşimi denemek için `--tikla`:
+
+```powershell
+node tarayici-goruntu.js --tikla "2026-01" http://localhost/Reports/powerbi/SatisDashboardPBI secim.png 32
+```
+
+Sentetik `.click()` Power BI'da kullanıcı hareketi sayılmıyor; betik CDP
+`Input.dispatchMouseEvent` ile gerçek fare olayı gönderiyor.
 
 Aynı iş önce PowerShell `ClientWebSocket` ile yazıldı ve iki yerde kırıldı:
 `about:blank`'ten `Page.navigate` ile gezinmek hedefi değiştirip soketi sessizce

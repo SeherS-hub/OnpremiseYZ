@@ -245,9 +245,11 @@ gorseller.push(gorsel('btnAjan', 24, 196, 976, 32, {
    yayinlanmis hali okunuyor (araclar/tahmin_yayinla.py). Ayni soruya iki
    farkli cevap cikmasin diye.
 
-   DONEM DILIMLEYICISI BU GORSELI SUZMEZ: CiroSerisi'nin Donem boyutuyla
-   iliskisi yok — olamaz da, icinde Donem'de bulunmayan gelecek donemler
-   var. Sessiz kalmasin diye baslikta "tum donemler" yaziyor.
+   DONEM DILIMLEYICISI: gerceklesen sutunlar secime uyar, tahmin uymaz.
+   CiroSerisi'nin Donem boyutuyla iliskisi yok — olamaz da, icinde Donem'de
+   bulunmayan gelecek donemler var; bu yuzden secim, olcunun icinde TREATAS
+   ile tasiniyor. Tahmin olculeri o suzgeci uygulamiyor: gelecek donemler
+   dilimleyici listesinde hic yok, suzmek tahmini her secimde yok ederdi.
 
    Iki eksen 0-120 arasina SABITLENDI. Sutunlar birincil, cizgiler ikincil
    eksende; otomatik olcekte iki eksen farkli araliga oturursa bant yanlis
@@ -259,7 +261,7 @@ gorseller.push(veriGorseli('grfTrend', 'lineClusteredColumnComboChart', 24, 248,
     Y2:       [O('CiroSerisi', 'Aylık Hedef'),
                O('CiroSerisi', 'Tahmin %80 Üst'), O('CiroSerisi', 'Tahmin %80 Alt')]
   },
-  'AYLIK CİRO, HEDEF VE TAHMİN (%80 ARALIK) · TÜM DÖNEMLER',
+  'AYLIK CİRO, HEDEF VE TAHMİN (%80 ARALIK)',
   {
     dataPoint: [
       { properties: { fill: renk(R.teal)   }, selector: { metadata: 'CiroSerisi.Gerçekleşen Ciro' } },

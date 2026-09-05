@@ -70,38 +70,38 @@
       "measures": [
         {
           "name": "Gerçekleşen Ciro",
-          "expression": "SUM ( CiroSerisi[Ciro] )",
+          "expression": "CALCULATE (\n    SUM ( CiroSerisi[Ciro] ),\n    KEEPFILTERS ( TREATAS ( VALUES ( Donem[Dönem] ), CiroSerisi[Dönem] ) )\n)",
           "formatString": "#,0 \"TL\"",
           "displayFolder": "05 Seri (dashboard)",
-          "description": "Gerçekleşen net ciro. Tahmin dönemlerinde boştur."
+          "description": "Gerçekleşen net ciro. Tahmin dönemlerinde boştur. Dönem dilimleyicisinin seçimine uyar (TREATAS ile taşınır; ilişki yok)."
         },
         {
           "name": "Aylık Hedef",
-          "expression": "SUM ( CiroSerisi[Hedef] )",
+          "expression": "CALCULATE (\n    SUM ( CiroSerisi[Hedef] ),\n    KEEPFILTERS ( TREATAS ( VALUES ( Donem[Dönem] ), CiroSerisi[Dönem] ) )\n)",
           "formatString": "#,0 \"TL\"",
           "displayFolder": "05 Seri (dashboard)",
-          "description": "Gerçekleşen dönemin hedefi. Tahmin dönemlerinde boştur — gelecek için onaylı hedef yok."
+          "description": "Gerçekleşen dönemin hedefi. Tahmin dönemlerinde boştur — gelecek için onaylı hedef yok. Dönem dilimleyicisinin seçimine uyar (TREATAS ile taşınır; ilişki yok)."
         },
         {
           "name": "Tahmin",
           "expression": "SUM ( CiroSerisi[TahminDeger] )",
           "formatString": "#,0 \"TL\"",
           "displayFolder": "05 Seri (dashboard)",
-          "description": "TAHMİN — gerçekleşme değil. Ajanın lib/tahmin.py hesabının yayınlanmış hâli. Yalnız gelecek dönemlerde doludur."
+          "description": "TAHMİN — gerçekleşme değil. Ajanın lib/tahmin.py hesabının yayınlanmış hâli. Yalnız gelecek dönemlerde doludur. Dönem dilimleyicisinden ETKİLENMEZ: gelecek dönemler o listede yok."
         },
         {
           "name": "Tahmin %80 Alt",
           "expression": "SUM ( CiroSerisi[TahminAlt] )",
           "formatString": "#,0 \"TL\"",
           "displayFolder": "05 Seri (dashboard)",
-          "description": "%80 kestirim aralığının alt sınırı."
+          "description": "%80 kestirim aralığının alt sınırı. Dönem dilimleyicisinden ETKİLENMEZ: gelecek dönemler o listede yok."
         },
         {
           "name": "Tahmin %80 Üst",
           "expression": "SUM ( CiroSerisi[TahminUst] )",
           "formatString": "#,0 \"TL\"",
           "displayFolder": "05 Seri (dashboard)",
-          "description": "%80 kestirim aralığının üst sınırı."
+          "description": "%80 kestirim aralığının üst sınırı. Dönem dilimleyicisinden ETKİLENMEZ: gelecek dönemler o listede yok."
         }
       ],
       "partitions": [

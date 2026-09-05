@@ -264,7 +264,19 @@ py 04-ajan-py\araclar\tahmin_yayinla.py     # hesapla → dbo.Tahmin → CiroSer
 
 `dbo.Tahmin` bir hesap yeri değil **yayın** yeri: her satır yöntemini, R²'sini, kaç dönem geçmişle üretildiğini ve üretim zamanını taşır. Modelin veri tazelemesinden sonra çalıştırılmalı — bayat tahmin, yanlış tahminden daha sinsidir.
 
-`CiroSerisi` tablosunun `Donem` boyutuyla **ilişkisi yok ve olmamalı**: içinde `Donem`'de bulunmayan gelecek dönemler var, ilişki kurulsaydı o satırlar boş satıra düşüp grafikten kaybolurdu. Bunun bedeli, `.pbix`'teki dönem dilimleyicisinin trend grafiğini süzmemesi; sessiz kalmasın diye görsel başlığında **"tüm dönemler"** yazıyor. RDL tarafında dönem süzgeci yalnız gerçekleşen satırlara uygulanıyor, tahmin her seçimde görünüyor.
+`CiroSerisi` tablosunun `Donem` boyutuyla **ilişkisi yok ve olmamalı**: içinde `Donem`'de bulunmayan gelecek dönemler var, ilişki kurulsaydı o satırlar boş satıra düşüp grafikten kaybolurdu.
+
+Dönem seçimi bu yüzden ölçünün içinde taşınıyor:
+
+```dax
+Gerçekleşen Ciro =
+CALCULATE (
+    SUM ( CiroSerisi[Ciro] ),
+    KEEPFILTERS ( TREATAS ( VALUES ( Donem[Dönem] ), CiroSerisi[Dönem] ) )
+)
+```
+
+Seçilmeyen dönem boş döner, sütunu çizilmez — Power BI tüm ölçüleri boş olan kategoriyi kendiliğinden düşürür. **Tahmin ölçüleri bu süzgeci uygulamaz**: gelecek dönemler dilimleyici listesinde hiç yok, oraya süzgeç koymak tahmini her seçimde yok ederdi. Sonuç: dönem seçince gerçekleşen sütunlar daralıyor, tahmin ve %80 bandı yerinde kalıyor. RDL tarafında da aynı davranış, orada süzgeç veri kümesi düzeyinde.
 
 İki grafikte de gerçekleşen **dolu**, tahmin **açık/içi boş** ve kesikli; %80 aralık iki kesikli çizgi. Önizlemeler: `03-rapor/onizleme/SatisDashboard-sayfa1.png` · `03-rapor/onizleme/SatisDashboardPBI.png`
 | SQL Server | modelin besleme kaynağı + denetim kaydı deposu. Hiçbir rapor iş verisi için SQL'e gitmez |
