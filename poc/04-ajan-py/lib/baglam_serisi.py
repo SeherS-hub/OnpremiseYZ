@@ -34,23 +34,40 @@ def _olcek(met):
     return 1000000 if (met and met['birim'] == 'TRY') else 1
 
 
+def _sade(sutun):
+    """'Donem[Dönem]' → '[Dönem]'. SUMMARIZECOLUMNS çıktısında kolonlar
+    tablo adı olmadan anılır."""
+    return sutun[sutun.index('['):]
+
+
 def _dax_sorgu(met):
     olcu = met['dax'] if (met and met.get('dax')) else '[Net Ciro]'
     b = _olcek(met)
     trend_deger = olcu if b == 1 else 'DIVIDE ( %s, %d )' % (olcu, b)
-    return (
-        'EVALUATE\n'
-        'UNION (\n'
-        '  SELECTCOLUMNS (\n'
-        '    SUMMARIZECOLUMNS ( Donem[DonemKey], Donem[Dönem], "v", ' + trend_deger + ' ),\n'
-        '    "Seri", "trend", "Sira", [DonemKey], "Etiket", [Dönem], "Deger", [v]\n'
-        '  ),\n'
-        '  SELECTCOLUMNS (\n'
-        '    SUMMARIZECOLUMNS ( Donem[DonemKey], Donem[Dönem], "g", [Hedef Gerçekleşme %] * 100 ),\n'
-        '    "Seri", "hedef", "Sira", [DonemKey], "Etiket", [Dönem], "Deger", [g]\n'
-        '  )\n'
-        ')\nORDER BY [Seri], [Sira]'
-    )
+
+    # Takvim kolonları ve hedef ölçüsü sözleşmeden geliyor; başka bir
+    # modele taşırken bu dosyaya dokunmak gerekmesin diye.
+    anahtar, donem = S.DONEM_ANAHTAR, S.DONEM_SUTUN
+    a, d = _sade(anahtar), _sade(donem)
+
+    trend = ('  SELECTCOLUMNS (\n'
+             '    SUMMARIZECOLUMNS ( %s, %s, "v", %s ),\n'
+             '    "Seri", "trend", "Sira", %s, "Etiket", %s, "Deger", [v]\n'
+             '  )' % (anahtar, donem, trend_deger, a, d))
+
+    hedef_olcu = getattr(S, 'KART_HEDEF_OLCU', None)
+    if not hedef_olcu:
+        # Modelde hedef ölçüsü yoksa kartın hedef grafiği boş kalır —
+        # uydurulmuş bir seri koymaktan iyidir.
+        return 'EVALUATE\n' + trend.strip() + '\nORDER BY [Seri], [Sira]'
+
+    hedef = ('  SELECTCOLUMNS (\n'
+             '    SUMMARIZECOLUMNS ( %s, %s, "g", %s * 100 ),\n'
+             '    "Seri", "hedef", "Sira", %s, "Etiket", %s, "Deger", [g]\n'
+             '  )' % (anahtar, donem, hedef_olcu, a, d))
+
+    return ('EVALUATE\nUNION (\n' + trend + ',\n' + hedef +
+            '\n)\nORDER BY [Seri], [Sira]')
 
 
 def sorgu(spec):

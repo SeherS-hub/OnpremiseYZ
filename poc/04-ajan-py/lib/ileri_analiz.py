@@ -32,33 +32,58 @@ def _met(spec):
     return S.metrik_bul(spec['metrikler'][0])
 
 
+def _donem_suzgeci(donem):
+    """Tek döneme daraltan süzgeç. Kolon adı sözleşmeden gelir ki başka bir
+    modele taşırken bu dosyaya dokunmak gerekmesin."""
+    return ('FILTER ( ALL ( %s ), %s = "%s" )'
+            % (S.DONEM_SUTUN, S.DONEM_SUTUN, donem))
+
+
 def _seri_sorgusu(met):
-    """Metriğin dönem serisi — sıralı."""
+    """Metriğin dönem serisi — sıralı.
+
+    Sıralama METİN kolonuna göre değil anahtara göre: "2026-10" metinsel
+    olarak "2026-9"dan önce gelir."""
     return ('EVALUATE\nSUMMARIZECOLUMNS (\n'
-            '    Donem[DonemKey],\n    Donem[Dönem],\n'
-            '    "%s", %s\n)\nORDER BY Donem[DonemKey] ASC' % (met['ad'], met['dax']))
+            '    %s,\n    %s,\n'
+            '    "%s", %s\n)\nORDER BY %s ASC'
+            % (S.DONEM_ANAHTAR, S.DONEM_SUTUN, met['ad'], met['dax'],
+               S.DONEM_ANAHTAR))
 
 
 def _kirilim_sorgusu(met, boyut, donem):
     b = S.boyut_bul(boyut)
     return ('EVALUATE\nSUMMARIZECOLUMNS (\n    %s,\n'
-            '    FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] = "%s" ),\n'
-            '    "%s", %s\n)' % (b['daxSutun'], donem, met['ad'], met['dax']))
+            '    %s,\n'
+            '    "%s", %s\n)'
+            % (b['daxSutun'], _donem_suzgeci(donem), met['ad'], met['dax']))
+
+
+UCLU = (('ciro', 'net_ciro'), ('adet', 'satis_adet'), ('sepet', 'ortalama_sepet'))
 
 
 def _uclu_sorgusu(donem):
-    """Ciro, adet ve sepet — hacim/sepet ayrıştırması için."""
-    f = 'FILTER ( ALL ( Donem[Dönem] ), Donem[Dönem] = "%s" )' % donem
-    return ('EVALUATE\nROW (\n'
-            '    "ciro",  CALCULATE ( [Net Ciro], %s ),\n'
-            '    "adet",  CALCULATE ( [Satış Adet], %s ),\n'
-            '    "sepet", CALCULATE ( [Ortalama Sepet], %s )\n)' % (f, f, f))
+    """Ciro, adet ve sepet — hacim/sepet ayrıştırması için.
+
+    Ölçü DAX'ları sözleşmeden okunuyor; başka bir modelde adları farklı
+    olur. Üçünden biri yoksa None döner ve çağıran reddeder: yanlış
+    ölçüyle ayrıştırma yapmaktansa cevap vermemek doğru."""
+    f = _donem_suzgeci(donem)
+    parcalar = []
+    for ad, kod in UCLU:
+        m = S.metrik_bul(kod)
+        if not m:
+            return None
+        parcalar.append('    "%s", CALCULATE ( %s, %s )' % (ad, m['dax'], f))
+    return 'EVALUATE\nROW (\n' + ',\n'.join(parcalar) + '\n)'
 
 
 def _seri_al(met, ayar):
     sorgu = _seri_sorgusu(met)
     satirlar = calistir_dax.calistir(sorgu, ayar)['satirlar']
-    etiketler = [str(s.get('Dönem')) for s in satirlar]
+    # Sonuç kümesinde kolon TABLO ADI OLMADAN döner.
+    d_ad = S.DONEM_SUTUN[S.DONEM_SUTUN.index('[') + 1:-1]
+    etiketler = [str(s.get(d_ad)) for s in satirlar]
     degerler = []
     for s in satirlar:
         v = s.get(met['ad'])
@@ -325,9 +350,10 @@ def _yil_sonu(spec, ayar):
     ek = []
     if met['kod'] == 'net_ciro' and hedef_met:
         aylar = [str(e).split('-')[1] for e, _ in ikili]
-        kosul = ' || '.join('Donem[Dönem] = "%s"' % e for e, _ in ikili)
+        kosul = ' || '.join('%s = "%s"' % (S.DONEM_SUTUN, e) for e, _ in ikili)
         hs = ('EVALUATE\nROW ( "hedef", CALCULATE ( %s,\n'
-              '    FILTER ( ALL ( Donem[Dönem] ), %s ) ) )' % (hedef_met['dax'], kosul))
+              '    FILTER ( ALL ( %s ), %s ) ) )'
+              % (hedef_met['dax'], S.DONEM_SUTUN, kosul))
         try:
             h = calistir_dax.calistir(hs, ayar)['satirlar'][0].get('hedef')
             h = float(h) if h is not None else None
@@ -479,6 +505,14 @@ def _hacim_sepet(spec, ayar):
         }
 
     q1, q2 = _uclu_sorgusu(onceki_d), _uclu_sorgusu(simdiki_d)
+    if not q1 or not q2:
+        return {
+            'metin': ('Bu ayrıştırma ciro, adet ve ortalama sepet ölçülerinin '
+                      'üçünü birden gerektiriyor; sözleşmede eksik olan var.'),
+            'aciklama': 'Hacim/sepet ayrıştırması yapılamadı — gereken ölçüler yok.',
+            'satirlar': [], 'baglam': _baglam(etiketler, degerler, met),
+            'sorgu': seri_sorgu, 'belirsizlikler': [], 'vurgu': None,
+        }
     toplu = calistir_dax.calistir_coklu(
         [{'ad': 'a', 'dax': q1}, {'ad': 'b', 'dax': q2}], ayar)
     h = katki.hacim_sepet_ayristirmasi(toplu['a'][0], toplu['b'][0])

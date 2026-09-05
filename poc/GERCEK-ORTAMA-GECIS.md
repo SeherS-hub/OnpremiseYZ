@@ -14,6 +14,116 @@ yayına almak, hiç almamaktan kötüdür.
 
 ---
 
+## Faz 0 · Başka bir SSAS'a bağlamak
+
+Fazlara girmeden önce ajanı **kendi modelinizde ayağa kaldırın**. Bu adım
+yarım gün sürer ve gerisinin üzerine kurulacağı zemindir.
+
+### 0.1 · Ön koşullar
+
+| Gereken | Neden | Not |
+|---|---|---|
+| Python 3.12 | ajan | `pip install -r 04-ajan-py/requirements.txt` |
+| **ADOMD.NET** istemcisi | SSAS'a bağlanmak | SSMS ile gelir; yoksa tek başına kurulabilir. Yolu `lib/calistir_dax.py` içindeki `_ADOMD_DIZINLERI` listesinde aranır — sürümünüz listede yoksa ekleyin |
+| **ODBC Driver 18 for SQL Server** | denetim kaydı | |
+| SQL Server veritabanı | denetim kaydının deposu | Küçük; ölçü verisi burada tutulmaz |
+| Node 18+ | *yalnız* `.pbix` üretmek ve tarayıcıda doğrulamak için | Ajan için gerekmez |
+
+Model tarafında: SSAS Tabular erişilebilir olmalı ve ajanı çalıştıran hesap
+modelde **okuma** yetkisine sahip olmalı. Sözleşme iskeletini üretmek için
+ayrıca **yönetici** yetkisi gerekiyor (`$SYSTEM.TMSCHEMA_*` görünümleri).
+
+### 0.2 · Denetim veritabanı
+
+Yalnız üç betik gerekiyor; `01_*` ve `02_*` bu PoC'nin kendi örnek verisi
+içindir, gerçek kurulumda çalıştırmayın.
+
+```powershell
+$db = 'DENETIM_DB'
+foreach ($f in '03_denetim_kaydi','04_aciklama_kolonu','05_kayit_serileri') {
+  sqlcmd -S SQLSUNUCU -E -C -f 65001 -d $db -i "poc\01-veri\$f.sql"
+}
+# tahmini dashboard'a taşıyacaksanız:
+sqlcmd -S SQLSUNUCU -E -C -f 65001 -d $db -i "poc\01-veri\06_tahmin_yayini.sql"
+```
+
+`06_*` içindeki `dbo.vw_CiroSerisi` görünümü bu PoC'nin `vw_SatisOzet`
+tablosuna bakar; kendi gerçekleşen serinizi gösterecek şekilde uyarlayın.
+
+### 0.3 · Ayarlar
+
+Hepsi ortam değişkeni; kodda değişiklik gerekmiyor.
+
+| Değişken | Varsayılan | Ne |
+|---|---|---|
+| `POC_SSAS_SUNUCU` | `localhost\TABULAR` | SSAS örneği |
+| `POC_SSAS_MODEL` | `POC_Satis` | model (katalog) adı |
+| `POC_SQL_SUNUCU` | `localhost` | denetim veritabanı sunucusu |
+| `POC_SQL_DB` | `POC_SatisYZ` | denetim veritabanı |
+| `POC_PORT` | `8787` | ajan portu — **yalnız 127.0.0.1'e** bağlanır |
+| `POC_RAPOR_PORTAL` / `POC_RAPOR_SUNUCU` | localhost | cevap kartı bağlantıları |
+
+### 0.4 · Sözleşme
+
+İşin ağırlığı burada; ayrıntısı **Faz 1**'de. Kısaca: iskeleti üretin
+(§1.1), `TODO`'ları doldurun (§1.2).
+
+Sözleşmenin sonunda üç satır modelin **biçimine** bakar — ajanın takvim
+kolonunu doğrudan yazması gereken tek yer:
+
+```python
+DONEM_SUTUN     = 'Donem[Dönem]'         # trend ve tahmin serilerinin ekseni
+DONEM_ANAHTAR   = 'Donem[DonemKey]'      # sıralama ("2026-10" < "2026-9" tuzağı)
+KART_HEDEF_OLCU = '[Hedef Gerçekleşme %]'  # kartın hedef grafiği; yoksa None
+```
+
+Bunlar dışında hiçbir dosyada model adı gömülü değil — planlayıcı, derleyici
+ve ileri analiz ölçü/boyut DAX'ını sözleşmeden okur.
+
+### 0.5 · Ayağa kaldırın ve ölçün
+
+```powershell
+cd poc\04-ajan-py
+py sunucu.py                       # http://localhost:8787
+py test\tahmin_testi.py            # modelden bağımsız; 19 vaka geçmeli
+```
+
+`test/altin_kume.py` ve `test/esanlam-durumlar.json` **bu modele özgüdür.**
+Kendi sorularınızla yeniden yazın — sayısı değil, kapsadığı davranış
+önemli: doğru ölçü, doğru filtre, doğru **ret**. Ölçme yöntemi §1.3'te.
+
+Sözlük boşluklarını bulmak için, gerçek kullanım başladıktan sonra:
+
+```powershell
+py araclar\sozluk_bosluk.py        # denetim kaydındaki cevaplanamayan sorular
+py araclar\model_gozat.py --tablo  # modelde ne var, ne yok
+```
+
+### 0.6 · Raporlar (isteğe bağlı)
+
+Ajan raporlar olmadan da çalışır. Kuracaksanız sırayla:
+
+| Rapor | Uyarlama gereken |
+|---|---|
+| `CevapKarti.rdl` | Bağlantı dizesi (denetim veritabanı). Ölçüye bağlı değil, kendi kendine yeter |
+| `SatisDashboard.rdl` | Veri kümelerindeki DAX — kendi ölçü adlarınız |
+| `SatisDashboardPBI.pbix` | `pbix-uret.js` içindeki alan adları; `node pbix-uret.js` ile yeniden üretin |
+
+Yükleme: `rdl-yukle.ps1` (SOAP — şema hatasını tam metniyle söyler) ve
+`pbix-yukle.ps1`. Doğrulama: RDL'i sunucu PNG olarak verir, `.pbix` için
+`node tarayici-goruntu.js <url> cikti.png`.
+
+### 0.7 · Bu kurulumun sınırları
+
+| Konu | Durum |
+|---|---|
+| Tek model | Birden çok konu alanı için yönlendirme katmanı gerekir; yok |
+| Kimlik | PoC'de tek kullanıcı. Gerçek kurulumda **Faz 2 zorunlu** — aksi hâlde herkes aynı veriyi görür |
+| Takvim | Aylık dönem varsayılıyor (`2026-08` biçimi). Günlük/haftalık takvim için `lib/planlayici.py` dönem çözümlemesi genişletilmeli |
+| Dil | Türkçe. Biçimbilim katmanı Türkçeye özgüdür |
+
+---
+
 ## Faz 1 · Sözleşme — işin ağırlığı burada
 
 Ajanın kalitesi bu dosyanın kalitesidir. Model bağlanır bağlanmaz cevap

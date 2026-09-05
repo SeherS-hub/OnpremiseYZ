@@ -140,8 +140,11 @@ def main():
     a = ap.parse_args()
 
     ayar = {'ssasSunucu': a.sunucu, 'ssasModel': a.model,
+            # Ad sunucu.py ile AYNI olmali: iki farkli degisken adi,
+            # ortam degiskeni tanimlanan kurulumda arac ile ajanin farkli
+            # veritabanina bakmasi demekti.
             'sqlSunucu': os.environ.get('POC_SQL_SUNUCU', 'localhost'),
-            'sqlVeritabani': os.environ.get('POC_SQL_VT', 'POC_SatisYZ')}
+            'sqlVeritabani': os.environ.get('POC_SQL_DB', 'POC_SatisYZ')}
 
     yaz('')
     yaz('  TAHMİN YAYINI · %s / %s' % (a.sunucu, a.model))

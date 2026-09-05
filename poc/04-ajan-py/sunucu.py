@@ -50,10 +50,7 @@ AYAR = {
     'raporSunucu': os.environ.get('POC_RAPOR_SUNUCU', 'http://localhost/ReportServer'),
 }
 
-# Arayüz Node sürümüyle ortak; iki kopya tutmak ayrışma demekti.
 GENEL_DIZIN = os.path.join(KOK, 'public')
-if not os.path.isdir(GENEL_DIZIN):
-    GENEL_DIZIN = os.path.abspath(os.path.join(KOK, '..', '04-ajan', 'public'))
 
 DENETIM_DIZIN = os.path.join(KOK, 'denetim')
 DENETIM_DOSYA = os.path.join(DENETIM_DIZIN, 'denetim.jsonl')

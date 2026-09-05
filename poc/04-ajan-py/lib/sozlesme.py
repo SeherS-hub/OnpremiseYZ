@@ -538,6 +538,23 @@ KAPSANAN_DONEMLER = [
 ]
 EN_GUNCEL_DONEM = '2026-08'
 
+# --------------------------------------------------------------------
+# MODEL BİÇİMİ — başka bir modele taşırken değişmesi gereken tek yer.
+#
+# Ölçü ve boyutlar yukarıdaki kataloglardan geliyor, ama trend serisi ve
+# ileri analiz sorguları takvim kolonunu doğrudan yazmak zorunda. Eskiden
+# bu adlar `baglam_serisi.py` ve `ileri_analiz.py` içine gömülüydü; başka
+# bir SSAS'a taşımak "şu iki dosyayı da düzenleyin" demek oluyordu.
+# Artık burada.
+#
+# DONEM_ANAHTAR sıralama içindir (metinsel "2026-10" < "2026-9" tuzağı).
+# KART_HEDEF_OLCU cevap kartının hedef grafiğini besler; modelinizde
+# hedef ölçüsü yoksa None yapın, kart o grafiği boş bırakır.
+# --------------------------------------------------------------------
+DONEM_SUTUN = 'Donem[Dönem]'
+DONEM_ANAHTAR = 'Donem[DonemKey]'
+KART_HEDEF_OLCU = '[Hedef Gerçekleşme %]'
+
 # Kapsam dışı: konu modelde yok.
 KAPSAM_DISI = [
     {
